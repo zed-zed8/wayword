@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>WayWord</title>
+
+    <!-- Safe, local, non-bundled script imports -->
+    <script src="/js/htmx/htmx.min.js"></script>
+    <script src="/js/alpine/cdn.min.js" defer></script>
+
+    <!-- tailwind css -->
+    <link rel="stylesheet" href="/css/output.css" />
+  </head>
+  <body class="flex flex-col min-h-screen">
+    <header>
+      <nav class="flex p-3 bg-brand-primary text-brand-primary-text">
+        <div class="">WayWord</div>
+        <ul class="flex ms-auto me-auto gap-3">
+          <li hx-target:inherited="main" hx-swap:inherited="innerMorph">
+            <a hx-get="/" class="text-info-text underline decoration-info-text"
+              >Home</a
+            >
+          </li>
+          <li>
+            <a hx-get="/" class="text-info-text underline decoration-info-text"
+              >Games</a
+            >
+          </li>
+          <li>
+            <a hx-get="/" class="text-info-text underline decoration-info-text"
+              >About</a
+            >
+          </li>
+        </ul>
+        <div class="">Profile</div>
+      </nav>
+    </header>
+
+    <main id="main" class="grow px-2 py-1">
+      <section>testest</section>
+    </main>
+
+    <footer class="text-center p-1 bg-brand-primary text-brand-primary-text">
+      &copy; WayWord 2026
+    </footer>
+  </body>
+</html>
