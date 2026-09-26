@@ -1,0 +1,30 @@
+<header>
+  <nav class="flex p-3 bg-brand-primary text-brand-primary-text">
+    <div class="">WayWord</div>
+
+    <ul
+      hx-target:inherited="#main"
+      hx-swap:inherited="innerMorph"
+      hx-push-url:inherited="true"
+      class="flex ms-auto me-auto gap-3"
+    >
+      <li>
+        <a hx-get="/home" class="text-info-text underline decoration-info-text"
+          >Home</a
+        >
+      </li>
+      <li>
+        <a hx-get="/games" class="text-info-text underline decoration-info-text"
+          >Games</a
+        >
+      </li>
+      <li>
+        <a hx-get="/about" class="text-info-text underline decoration-info-text"
+          >About</a
+        >
+      </li>
+    </ul>
+
+    <div class="">Profile</div>
+  </nav>
+</header>

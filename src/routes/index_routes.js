@@ -1,10 +1,13 @@
 import express from "express";
 
-import controllers from "../controllers/index/index.js";
+import pagesControllers from "../controllers/pages/controllers.js";
 
 const indexRouter = express.Router();
 
 //? routes
-indexRouter.get("/", controllers.homeController);
+indexRouter.get("/", pagesControllers.indexController);
+indexRouter.get("/home", pagesControllers.homeController);
+indexRouter.get("/games", pagesControllers.gamesController);
+indexRouter.get("/about", pagesControllers.aboutController);
 
 export default indexRouter;
