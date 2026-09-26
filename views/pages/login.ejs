@@ -1,0 +1,44 @@
+<section id="login">
+  <form
+    id="loginForm"
+    hx-post="/login"
+    hx-target="#body"
+    hx-swap="innerMorph"
+    hx-headers='{"Content-Type": "application/x-www-form-urlencoded"}'
+  >
+    <h1>Login Form</h1>
+
+    <label for="username">Username : </label>
+    <input
+      type="text"
+      id="username"
+      name="username"
+      autocomplete="off"
+      placeholder="username..."
+      required
+    />
+    <br />
+
+    <label for="password">Password : </label>
+    <input
+      type="password"
+      id="password"
+      name="password"
+      autocomplete="off"
+      placeholder="password..."
+      required
+    />
+    <br />
+
+    <button class="bg-brand-primary">Login</button>
+  </form>
+
+  <a
+    hx-target="#main"
+    hx-swap="innerMorph"
+    hx-push-url="true"
+    hx-get="/register"
+    class="text-info-text underline decoration-info-text"
+    >Register</a
+  >
+</section>

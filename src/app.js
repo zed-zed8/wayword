@@ -2,15 +2,14 @@ import http from "http";
 import path from "path";
 import { fileURLToPath } from "url";
 import express from "express";
+import session from "express-session";
 import mongoose from "mongoose";
 import dns from "dns";
 import dotenv from "dotenv";
+import connect_mongodb_session from "connect-mongodb-session";
 
 // custom
 import indexRouter from "./routes/index_routes.js";
-
-// models
-import User from "./models/db/user.js";
 
 // config
 dotenv.config();
@@ -24,6 +23,45 @@ const __dirname = path.dirname(__filename);
 
 //? init express
 const app = express();
+
+// Mongodb Store
+const MongoDBStore = connect_mongodb_session(session);
+
+// Set up the Atlas store
+const store = new MongoDBStore({
+  uri: process.env.MONGODB_URI,
+  collection: "sessions",
+});
+
+// Catch errors if the store fails to connect to Atlas
+store.on("error", function (error) {
+  console.log("Session store error:", error);
+});
+
+//? middleware
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET || "2e147e483e647", //random key
+    store: store,
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      maxAge: 1000 * 60 * 60,
+      httpOnly: true,
+      secure: false, // Must be trxue for HTTPS
+      sameSite: "strict",
+    },
+  }),
+);
+app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
+
+// custom
+app.use((req, res, next) => {
+  // This makes "currentUser" available in every single EJS file automatically
+  res.locals.currentUser = req.session.user || null;
+  next();
+});
 
 //? initialize htmx, alpine
 app.use(
@@ -43,16 +81,6 @@ app.set("view engine", "ejs");
 
 //? routes
 app.use(indexRouter);
-
-app.get("/test", (req, res) => {
-  const zid = new User({
-    username: "zid",
-    email: "zid@gmail.com",
-    password: "zid123",
-  });
-  zid.save();
-  res.send(zid);
-});
 
 //? server
 const server = http.createServer(app);

@@ -37,9 +37,9 @@
   --color-success-border: rgba(16, 185, 129, 0.2);
   --color-success-text: var(--color-emerald-400);
 
-  --color-error-bg: rgba(244, 63, 94, 0.1);
-  --color-error-border: rgba(244, 63, 94, 0.2);
-  --color-error-text: var(--color-rose-400);
+  --color-error-bg: var(--color-red-600);
+  --color-error-border: var(--color-red-400);
+  --color-error-text: var(--color-red-800);
 
   --color-warning-bg: rgba(245, 158, 11, 0.1);
   --color-warning-border: rgba(245, 158, 11, 0.2);

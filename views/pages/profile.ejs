@@ -1,0 +1,9 @@
+<section id="profile">
+  <div class="flex flex-col">
+    <span>id: <%= user._id %></span>
+    <span>username: <%= user.username %></span>
+    <span>email: <%= user.email %></span>
+    <span>password: <%= user.password %></span>
+    <span><a hx-get="/logout" hx-target="body" hx-swap="innerMorph" hx-push-url="true" class="bg-error-bg">Logout</a></span>
+  </div>
+</section>
