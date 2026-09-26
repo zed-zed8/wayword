@@ -1,5 +1,4 @@
 /*! tailwindcss v4.3.3 | MIT License | https://tailwindcss.com */
-@layer properties;
 @layer theme, base, components, utilities;
 @layer theme {
   :root, :host {
@@ -42,32 +41,8 @@
     --spacing: 0.25rem;
     --default-font-family: var(--font-sans);
     --default-mono-font-family: var(--font-mono);
-    --color-bg-canvas: var(--color-slate-950);
-    --color-text-canvas: var(--color-slate-50);
-    --color-bg-surface: var(--color-slate-900);
-    --color-text-surface: var(--color-slate-200);
-    --color-bg-component: #1e293b;
-    --color-text-component: var(--color-slate-300);
-    --color-border-base: var(--color-slate-700);
-    --color-border-muted: var(--color-slate-800);
-    --color-text-muted: var(--color-slate-400);
     --color-brand-primary: var(--color-indigo-500);
-    --color-brand-primary-hover: var(--color-indigo-400);
     --color-brand-primary-text: var(--color-slate-950);
-    --color-brand-secondary: var(--color-slate-800);
-    --color-brand-secondary-hover: var(--color-slate-700);
-    --color-brand-secondary-text: var(--color-slate-200);
-    --color-success-bg: rgba(16, 185, 129, 0.1);
-    --color-success-border: rgba(16, 185, 129, 0.2);
-    --color-success-text: var(--color-emerald-400);
-    --color-error-bg: rgba(244, 63, 94, 0.1);
-    --color-error-border: rgba(244, 63, 94, 0.2);
-    --color-error-text: var(--color-rose-400);
-    --color-warning-bg: rgba(245, 158, 11, 0.1);
-    --color-warning-border: rgba(245, 158, 11, 0.2);
-    --color-warning-text: var(--color-amber-400);
-    --color-info-bg: rgba(14, 165, 233, 0.1);
-    --color-info-border: rgba(14, 165, 233, 0.2);
     --color-info-text: var(--color-sky-400);
   }
 }
@@ -220,9 +195,6 @@
   }
 }
 @layer utilities {
-  .m-2 {
-    margin: calc(var(--spacing) * 2);
-  }
   .ms-auto {
     margin-inline-start: auto;
   }
@@ -232,93 +204,23 @@
   .flex {
     display: flex;
   }
-  .grid {
-    display: grid;
-  }
-  .table {
-    display: table;
-  }
-  .h-1 {
-    height: var(--spacing);
-  }
-  .h-5 {
-    height: calc(var(--spacing) * 5);
-  }
-  .h-20 {
-    height: calc(var(--spacing) * 20);
-  }
-  .h-100 {
-    height: calc(var(--spacing) * 100);
-  }
-  .h-200 {
-    height: calc(var(--spacing) * 200);
-  }
-  .h-auto {
-    height: auto;
-  }
-  .h-screen {
-    height: 100vh;
-  }
   .min-h-screen {
     min-height: 100vh;
-  }
-  .w-100 {
-    width: calc(var(--spacing) * 100);
-  }
-  .w-200 {
-    width: calc(var(--spacing) * 200);
-  }
-  .flex-grow {
-    flex-grow: 1;
   }
   .grow {
     flex-grow: 1;
   }
-  .border-collapse {
-    border-collapse: collapse;
-  }
-  .resize {
-    resize: both;
-  }
   .flex-col {
     flex-direction: column;
   }
-  .flex-row {
-    flex-direction: row;
-  }
-  .items-center {
-    align-items: center;
-  }
-  .justify-center {
-    justify-content: center;
-  }
-  .gap-1 {
-    gap: var(--spacing);
-  }
   .gap-3 {
     gap: calc(var(--spacing) * 3);
-  }
-  .border {
-    border-style: var(--tw-border-style);
-    border-width: 1px;
-  }
-  .bg-bg-canvas {
-    background-color: var(--color-bg-canvas);
-  }
-  .bg-bg-component {
-    background-color: var(--color-bg-component);
-  }
-  .bg-bg-surface {
-    background-color: var(--color-bg-surface);
   }
   .bg-brand-primary {
     background-color: var(--color-brand-primary);
   }
   .p-1 {
     padding: var(--spacing);
-  }
-  .p-2 {
-    padding: calc(var(--spacing) * 2);
   }
   .p-3 {
     padding: calc(var(--spacing) * 3);
@@ -335,30 +237,14 @@
   .text-brand-primary-text {
     color: var(--color-brand-primary-text);
   }
-  .text-brand-secondary {
-    color: var(--color-brand-secondary);
-  }
-  .text-info-bg {
-    color: var(--color-info-bg);
-  }
   .text-info-text {
     color: var(--color-info-text);
-  }
-  .text-text-component {
-    color: var(--color-text-component);
-  }
-  .text-text-surface {
-    color: var(--color-text-surface);
   }
   .underline {
     text-decoration-line: underline;
   }
   .decoration-info-text {
     text-decoration-color: var(--color-info-text);
-  }
-  .outline {
-    outline-style: var(--tw-outline-style);
-    outline-width: 1px;
   }
 }
 body:where(.light) {
@@ -389,22 +275,4 @@ body:where(.light) {
   --color-info-bg: var(--color-sky-50);
   --color-info-border: var(--color-sky-200);
   --color-info-text: var(--color-sky-800);
-}
-@property --tw-border-style {
-  syntax: "*";
-  inherits: false;
-  initial-value: solid;
-}
-@property --tw-outline-style {
-  syntax: "*";
-  inherits: false;
-  initial-value: solid;
-}
-@layer properties {
-  @supports ((-webkit-hyphens: none) and (not (margin-trim: inline))) or ((-moz-orient: inline) and (not (color:rgb(from red r g b)))) {
-    *, ::before, ::after, ::backdrop {
-      --tw-border-style: solid;
-      --tw-outline-style: solid;
-    }
-  }
 }
