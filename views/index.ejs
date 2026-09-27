@@ -1,24 +1,12 @@
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <title>WayWord</title>
+<%- include("partials/htmlhead.ejs") %>
 
-    <!-- Safe, local, non-bundled script imports -->
-    <script src="/js/htmx/htmx.min.js"></script>
-    <script src="/js/alpine/cdn.min.js" defer></script>
+<%- include("partials/header.ejs") %>
 
-    <!-- tailwind css -->
-    <link rel="stylesheet" href="/css/output.css" />
-  </head>
-  <body id="body" class="flex flex-col min-h-screen">
-    <%- include("partials/header.ejs") %>
+<main id="main" class="grow px-2 py-1">
+  <% var pages = locals.page ?? "home" %>
+  <%- include(`pages/${pages}.ejs`) %>
+</main>
 
-    <main id="main" class="grow px-2 py-1">
-      <% var pages = locals.page ?? "home" %>
-      <%- include(`pages/${pages}.ejs`) %>
-    </main>
+<%- include("partials/footer.ejs") %>
 
-    <%- include("partials/footer.ejs") %>
-  </body>
-</html>
+<%- include("partials/htmlend.ejs") %>

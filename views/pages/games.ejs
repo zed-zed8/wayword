@@ -1,1 +1,16 @@
-<section id="games">This is the Games Page</section>
+<section id="games">
+  <div class="">This is the Games Page</div>
+
+  <div class="">
+    <span>Clash Of Word</span>
+    <br>
+    <a hx-get="/lobby/host" hx-target="body" hx-swap="innerMorph" hx-push-url="true">Host</a>
+    <br>
+    <form hx-get="/lobby" hx-target="body" hx-swap="innerMorph" hx-push-url="true">
+      <input type="text" name="lobbyCode" placeholder="lobby code" required>
+      <br>
+      <button type="submit">Join Lobby</button>
+    </form>
+    <!-- TODO Implement join lobby with code -->
+  </div>
+</section>

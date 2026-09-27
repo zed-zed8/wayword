@@ -4,17 +4,17 @@ import User from "../../models/db/user.js";
 const loginController = (req, res) => {
   const isHTMXReq = req.get("HX-Request") === "true";
   if (isHTMXReq) {
-    res.render("pages/login");
+    res.render("pages/auth/login");
   } else {
-    res.render("index", { page: "login" });
+    res.render("index", { page: "auth/login" });
   }
 };
 const registerController = (req, res) => {
   const isHTMXReq = req.get("HX-Request") === "true";
   if (isHTMXReq) {
-    res.render("pages/register");
+    res.render("pages/auth/register");
   } else {
-    res.render("index", { page: "register" });
+    res.render("index", { page: "auth/register" });
   }
 };
 
@@ -30,7 +30,7 @@ const postLoginController = async (req, res) => {
   const user = await User.exists({ username: username, password: password });
 
   if (user === null) {
-    res.render("index", { page: "login" });
+    res.render("index", { page: "auth/login" });
   } else {
     console.log(user);
     req.session.user = { _id: user._id.toString(), username: username };

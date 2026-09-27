@@ -1,0 +1,11 @@
+<%- include("../../partials/htmlhead.ejs") %>
+
+<main id="lobby-player" hx-ext="ws" hx-ws:connect="/player?sessionId=<%= sessionId %>&playerSlot=<%= playerSlot %>">
+  <h1>Clash Of Word</h1>
+
+  <section id="game-screen">
+    <div>Waiting for the host to start</div>
+  </section>
+</main>
+
+<%- include("../../partials/htmlend.ejs") %>

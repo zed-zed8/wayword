@@ -14,7 +14,6 @@ const playerSchema = new Schema({
   },
   word: {
     type: String,
-    required: true,
   },
   status: {
     type: String,
@@ -38,11 +37,9 @@ const roundSchema = new Schema({
   },
   word1: {
     type: String,
-    required: true,
   },
   word2: {
     type: String,
-    required: true,
   },
   avaiableLetter: {
     type: [String],
@@ -66,4 +63,9 @@ const sessionSchema = new Schema(
   },
 );
 
-export default sessionSchema;
+const COWSession = mongoose.model(
+  "Session",
+  sessionSchema,
+  "history_clash_of_word",
+);
+export default COWSession;

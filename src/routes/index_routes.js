@@ -12,6 +12,10 @@ indexRouter.get("/games", pagesControllers.gamesController);
 indexRouter.get("/about", pagesControllers.aboutController);
 indexRouter.get("/profile/:id", pagesControllers.profileController);
 
+//? games lobby
+indexRouter.get("/lobby/host", pagesControllers.lobbyHostController);
+indexRouter.get("/lobby", pagesControllers.lobbyController);
+
 //? auth routes
 indexRouter.get("/login", authControllers.loginController);
 indexRouter.post("/login", authControllers.postLoginController);

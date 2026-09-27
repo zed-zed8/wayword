@@ -1,5 +1,11 @@
 import User from "../../models/db/user.js";
 
+import {
+  gamesController,
+  lobbyHostController,
+  lobbyController,
+} from "./gamesController.js";
+
 const indexController = (req, res) => {
   res.render("index");
 };
@@ -9,14 +15,6 @@ const homeController = (req, res) => {
     res.render("pages/home");
   } else {
     res.render("index", { page: "home" });
-  }
-};
-const gamesController = (req, res) => {
-  const isHTMXReq = req.get("HX-Request") === "true";
-  if (isHTMXReq) {
-    res.render("pages/games");
-  } else {
-    res.render("index", { page: "games" });
   }
 };
 const aboutController = (req, res) => {
@@ -45,6 +43,9 @@ const pagesControllers = {
   gamesController,
   aboutController,
   profileController,
+
+  lobbyHostController,
+  lobbyController,
 };
 
 export default pagesControllers;

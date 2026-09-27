@@ -1,0 +1,20 @@
+<%- include("../../partials/htmlhead.ejs") %>
+
+<main id="lobby-host" hx-ext="ws" hx-ws:connect="/host">
+  <h1>Clash Of Word</h1>
+
+  <section id="game-screen">
+    <div>
+      <div>Lobby code</div>
+      <div id="lobby-code">Waiting...</div>
+    </div>
+
+    <br>
+    <div>Joined Player</div>
+    <ul id="joined-player">
+      <!-- TODO implement joined player -->
+    </ul>
+  </section>
+</main>
+
+<%- include("../../partials/htmlend.ejs") %>

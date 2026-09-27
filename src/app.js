@@ -7,6 +7,7 @@ import mongoose from "mongoose";
 import dns from "dns";
 import dotenv from "dotenv";
 import connect_mongodb_session from "connect-mongodb-session";
+import { setupWebSocket } from "./websocket.js";
 
 // custom
 import indexRouter from "./routes/index_routes.js";
@@ -84,6 +85,9 @@ app.use(indexRouter);
 
 //? server
 const server = http.createServer(app);
+
+//? websocket
+setupWebSocket(server);
 
 //? connect to mongodb
 const dbURI = process.env.MONGODB_URI;
