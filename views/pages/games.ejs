@@ -4,9 +4,9 @@
   <div class="">
     <span>Clash Of Word</span>
     <br>
-    <a hx-get="/lobby/host" hx-target="body" hx-swap="innerMorph" hx-push-url="true">Host</a>
+    <a href="/lobby/host" hx-target="body" hx-swap="innerMorph">Host</a>
     <br>
-    <form hx-get="/lobby" hx-target="body" hx-swap="innerMorph" hx-push-url="true">
+    <form method="get" hx-get="/lobby" hx-target="body" hx-swap="innerMorph">
       <input type="text" name="lobbyCode" placeholder="lobby code" required>
       <br>
       <button type="submit">Join Lobby</button>

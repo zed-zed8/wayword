@@ -2,25 +2,25 @@
   <nav class="flex p-3 bg-brand-primary text-brand-primary-text">
     <div class="">WayWord</div>
 
-    <ul hx-target:inherited="#main" hx-swap:inherited="innerMorph" hx-push-url:inherited="true" class="flex ms-auto me-auto gap-3">
+    <ul hx-target:inherited="#main" hx-swap:inherited="innerMorph" class="flex ms-auto me-auto gap-3">
       <li>
-        <a hx-get="/home" class="text-info-text underline decoration-info-text">Home</a>
+        <a href="/home" class="text-info-text underline decoration-info-text">Home</a>
       </li>
       <li>
-        <a hx-get="/games" class="text-info-text underline decoration-info-text">Games</a>
+        <a href="/games" class="text-info-text underline decoration-info-text">Games</a>
       </li>
       <li>
-        <a hx-get="/about" class="text-info-text underline decoration-info-text">About</a>
+        <a href="/about" class="text-info-text underline decoration-info-text">About</a>
       </li>
     </ul>
 
     <div id="profile">
       <% if (currentUser) { %>
-      <a hx-get="/profile/<%= currentUser._id %>" hx-target="#main" hx-swap="innerMorph" hx-push-url="true">
+      <a href="/profile/<%= currentUser._id %>" hx-target="#main" hx-swap="innerMorph">
         <%= currentUser.username %>
       </a>
       <% } else { %>
-      <a hx-target="#main" hx-swap="innerMorph" hx-push-url="true" hx-get="/login" class="text-info-text underline decoration-info-text">Login</a>
+      <a href="/login" hx-target="#main" hx-swap="innerMorph" class="text-info-text underline decoration-info-text">Login</a>
       <% } %>
     </div>
   </nav>

@@ -4,6 +4,6 @@
     <span>username: <%= user.username %></span>
     <span>email: <%= user.email %></span>
     <span>password: <%= user.password %></span>
-    <span><a hx-get="/logout" hx-target="body" hx-swap="innerMorph" hx-push-url="true" class="bg-error-bg">Logout</a></span>
+    <span><a href="/logout" hx-target="body" hx-swap="innerMorph" class="bg-error-bg">Logout</a></span>
   </div>
 </section>
