@@ -6,11 +6,10 @@
     <br>
     <a href="/lobby/host" hx-target="body" hx-swap="innerMorph">Host</a>
     <br>
-    <form method="get" hx-get="/lobby" hx-target="body" hx-swap="innerMorph">
+    <form method="get" action="/lobby" hx-target="body" hx-swap="innerMorph">
       <input type="text" name="lobbyCode" placeholder="lobby code" required>
       <br>
       <button type="submit">Join Lobby</button>
     </form>
-    <!-- TODO Implement join lobby with code -->
   </div>
 </section>

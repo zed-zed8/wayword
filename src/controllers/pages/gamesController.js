@@ -15,7 +15,14 @@ const lobbyHostController = async (req, res) => {
 };
 
 const lobbyController = async (req, res) => {
-  const currentSessionId = req.query.lobbyCode;
+  // Check for a specific parameter
+  let currentSessionId;
+  if (req.query.lobbyCode) {
+    currentSessionId = req.query.lobbyCode;
+  } else {
+    currentSessionId = req.query.sessionId;
+  }
+
   console.log(currentSessionId);
 
   // TODO verify login
@@ -29,24 +36,39 @@ const lobbyController = async (req, res) => {
     }
 
     // 2. In-Memory Calculation: Verify the chosen slot is empty
-    const playerSlot =
-      playerConnections.get(currentSessionId).size % 2 == 0
-        ? "player1"
-        : "player2";
+    let playerSlot;
+    if (
+      req.query.playerSlot === "player1" ||
+      req.query.playerSlot === "player2"
+    ) {
+      playerSlot = req.query.playerSlot;
+    } else {
+      playerSlot =
+        playerConnections.get(currentSessionId).size % 2 == 0
+          ? "player1"
+          : "player2";
+    }
     const targetPlayer = session[playerSlot];
 
     // Assign a unique Object ID to this player controller if not set
-    targetPlayer.playerId = req.session.user._id;
+    // targetPlayer.playerId = req.session.user._id;
 
     // 3. Save the assignment to MongoDB
     await session.save();
+
+    // Tell HTMX to update the browser URL bar with these extra query params
+    res.setHeader(
+      "HX-Push-Url",
+      `/lobby?sessionId=${currentSessionId}&playerSlot=${playerSlot}`,
+    );
 
     res.render("games/clash_of_word/player", {
       sessionId: currentSessionId,
       playerSlot: playerSlot,
     });
   } catch (error) {
-    res.status(500).send("Error joining the session.");
+    console.log(error);
+    res.status(500).send("Error joining the session. " + error.message);
   }
 };
 
