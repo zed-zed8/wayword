@@ -16,11 +16,11 @@
 
     <div id="profile">
       <% if (currentUser) { %>
-      <a href="/profile/<%= currentUser._id %>" hx-target="#main" hx-swap="innerMorph">
+      <a href="/profile/<%= currentUser._id %>" hx-target="main" hx-swap="innerMorph">
         <%= currentUser.username %>
       </a>
       <% } else { %>
-      <a href="/login" hx-target="#main" hx-swap="innerMorph" class="text-info-text underline decoration-info-text">Login</a>
+      <a href="/login" hx-target="main" hx-swap="innerMorph" class="text-info-text underline decoration-info-text">Login</a>
       <% } %>
     </div>
   </nav>

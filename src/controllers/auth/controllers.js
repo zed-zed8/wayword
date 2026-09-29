@@ -3,7 +3,10 @@ import User from "../../models/db/user.js";
 
 const loginController = (req, res) => {
   const isHTMXReq = req.get("HX-Request") === "true";
-  if (isHTMXReq) {
+  // Read the hx-target ID from the request headers
+  const targetElement = req.get("HX-Target");
+  console.log(targetElement);
+  if (isHTMXReq && targetElement === "main#main") {
     res.render("pages/auth/login");
   } else {
     res.render("index", { page: "auth/login" });
