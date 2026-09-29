@@ -63,14 +63,10 @@ app.use((req, res, next) => {
   next();
 });
 
-//? initialize htmx, alpine
+//? initialize htmx
 app.use(
   "/js/htmx",
   express.static(path.join(__dirname, "../node_modules/htmx.org/dist")),
-);
-app.use(
-  "/js/alpine",
-  express.static(path.join(__dirname, "../node_modules/alpinejs/dist")),
 );
 
 //? views engine and public dir
