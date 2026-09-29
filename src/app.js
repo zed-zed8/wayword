@@ -40,20 +40,19 @@ store.on("error", function (error) {
 });
 
 //? middleware
-app.use(
-  session({
-    secret: process.env.SESSION_SECRET || "2e147e483e647", //random key
-    store: store,
-    resave: false,
-    saveUninitialized: false,
-    cookie: {
-      maxAge: 1000 * 60 * 60,
-      httpOnly: true,
-      secure: false, // Must be trxue for HTTPS
-      sameSite: "strict",
-    },
-  }),
-);
+export const sessionMiddleware = session({
+  secret: process.env.SESSION_SECRET || "2e147e483e647", //random key
+  store: store,
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    maxAge: 1000 * 60 * 60,
+    httpOnly: true,
+    secure: false, // Must be trxue for HTTPS
+    sameSite: "strict",
+  },
+});
+app.use(sessionMiddleware);
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 

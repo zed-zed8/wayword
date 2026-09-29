@@ -49,6 +49,12 @@ const roundSchema = new Schema({
 
 const sessionSchema = new Schema(
   {
+    // This acts as your foreign key reference
+    host: {
+      type: Schema.Types.ObjectId,
+      ref: "User", // Must match the exact model name string
+      required: true,
+    },
     gamestatus: {
       type: String,
       enum: ["running", "finished"],

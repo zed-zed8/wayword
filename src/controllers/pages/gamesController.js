@@ -25,7 +25,6 @@ const lobbyController = async (req, res) => {
 
   console.log(currentSessionId);
 
-  // TODO verify login
   try {
     // 1. Fetch from DB to make sure the host room exists
     const session = await COWsession.findById(currentSessionId);
@@ -51,7 +50,7 @@ const lobbyController = async (req, res) => {
     const targetPlayer = session[playerSlot];
 
     // Assign a unique Object ID to this player controller if not set
-    // targetPlayer.playerId = req.session.user._id;
+    targetPlayer.playerId = req.session.user._id;
 
     // 3. Save the assignment to MongoDB
     await session.save();
@@ -68,7 +67,8 @@ const lobbyController = async (req, res) => {
     });
   } catch (error) {
     console.log(error);
-    res.status(500).send("Error joining the session. " + error.message);
+    res.status(500).send("Error joining the+ session. " + error.message);
+    // TODO error
   }
 };
 
