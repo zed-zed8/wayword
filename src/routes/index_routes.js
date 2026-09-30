@@ -15,7 +15,7 @@ indexRouter.get("/about", pagesControllers.aboutController);
 indexRouter.get("/profile/:id", pagesControllers.profileController);
 
 //? games lobby
-indexRouter.get("/lobby/host", pagesControllers.lobbyHostController);
+indexRouter.get("/lobby/host", checkAuth, pagesControllers.lobbyHostController);
 indexRouter.get("/lobby", checkAuth, pagesControllers.lobbyController);
 
 //? auth routes
