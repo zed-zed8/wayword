@@ -136,8 +136,6 @@ export function setupWebSocket(server) {
       // Update Host Screen to add the user there
       hostConnections.get(sessionId).send(payloadHost);
 
-      // TODO start game when both player are on
-      // TODO and update the host to be able to start
       if (playerConnections.get(sessionId).size == 2) {
         console.log("play");
 

@@ -33,8 +33,8 @@
   --color-brand-secondary-text: var(--color-slate-200);
 
   /* --- Status / Feedback Elements --- */
-  --color-success-bg: rgba(16, 185, 129, 0.1);
-  --color-success-border: rgba(16, 185, 129, 0.2);
+  --color-success-bg: var(--color-emerald-700);
+  --color-success-border: var(--color-emerald-800);
   --color-success-text: var(--color-emerald-400);
 
   --color-error-bg: var(--color-red-600);

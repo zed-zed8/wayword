@@ -17,6 +17,7 @@
     --color-emerald-50: oklch(97.9% 0.021 166.113);
     --color-emerald-200: oklch(90.5% 0.093 164.15);
     --color-emerald-400: oklch(76.5% 0.177 163.223);
+    --color-emerald-700: oklch(50.8% 0.118 165.612);
     --color-emerald-800: oklch(43.2% 0.095 166.913);
     --color-sky-50: oklch(97.7% 0.013 236.62);
     --color-sky-200: oklch(90.1% 0.058 230.902);
@@ -39,12 +40,16 @@
     --color-slate-800: oklch(27.9% 0.041 260.031);
     --color-slate-900: oklch(20.8% 0.042 265.755);
     --color-slate-950: oklch(12.9% 0.042 264.695);
+    --color-gray-400: oklch(70.7% 0.022 261.325);
+    --color-black: #000;
     --color-white: #fff;
     --spacing: 0.25rem;
     --default-font-family: var(--font-sans);
     --default-mono-font-family: var(--font-mono);
     --color-brand-primary: var(--color-indigo-500);
     --color-brand-primary-text: var(--color-slate-950);
+    --color-success-bg: var(--color-emerald-700);
+    --color-success-text: var(--color-emerald-400);
     --color-error-bg: var(--color-red-600);
     --color-info-text: var(--color-sky-400);
   }
@@ -219,11 +224,20 @@
   .gap-3 {
     gap: calc(var(--spacing) * 3);
   }
+  .rounded {
+    border-radius: 0.25rem;
+  }
   .bg-brand-primary {
     background-color: var(--color-brand-primary);
   }
   .bg-error-bg {
     background-color: var(--color-error-bg);
+  }
+  .bg-gray-400 {
+    background-color: var(--color-gray-400);
+  }
+  .bg-success-bg {
+    background-color: var(--color-success-bg);
   }
   .p-1 {
     padding: var(--spacing);
@@ -240,11 +254,17 @@
   .text-center {
     text-align: center;
   }
+  .text-black {
+    color: var(--color-black);
+  }
   .text-brand-primary-text {
     color: var(--color-brand-primary-text);
   }
   .text-info-text {
     color: var(--color-info-text);
+  }
+  .text-success-text {
+    color: var(--color-success-text);
   }
   .lowercase {
     text-transform: lowercase;
@@ -254,6 +274,14 @@
   }
   .decoration-info-text {
     text-decoration-color: var(--color-info-text);
+  }
+  @media (hover: hover) {
+    .hover\:bg-success-text:hover {
+      background-color: var(--color-success-text);
+    }
+    .hover\:text-success-bg:hover {
+      color: var(--color-success-bg);
+    }
   }
 }
 body:where(.light) {
