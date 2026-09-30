@@ -130,7 +130,7 @@ export function setupWebSocket(server) {
         "joined_player",
         { username },
         "#joined-player",
-        "innerMorph",
+        "beforeend",
       );
 
       // Update Host Screen to add the user there
@@ -140,6 +140,15 @@ export function setupWebSocket(server) {
       // TODO and update the host to be able to start
       if (playerConnections.get(sessionId).size == 2) {
         console.log("play");
+
+        const payloadHost = await renderTemplate(
+          "clash_of_word",
+          "start_button",
+          {},
+          "#startButton",
+          "innerMorph",
+        );
+        hostConnections.get(sessionId).send(payloadHost);
       }
       console.log(req.session.user);
     }
@@ -197,32 +206,75 @@ export function setupWebSocket(server) {
   wssHost.on("connection", async (ws, req) => {
     console.log("Host connected");
     // TODO (maybe) add page so that i can have two event (starting connecting, and start game button) inside the host screen
-
+    let pages = "lobby";
     let sessionId;
-    // Initialize only Once
-    if (!hostConnections.get(sessionId)?.has(ws)) {
-      // 1. Generate the session in the DB immediately when a host opens the screen
-      const newSession = new COWsession(defaultSession(req.session.user?._id));
-      newSession.save();
-      sessionId = newSession._id.toString();
 
-      // 2. Track the host socket in memory
+    let hostId = req.session.user?._id;
+    if (!hostId) {
+      ws.close(4001, "Unauthorized");
+      return;
+    }
+    try {
+      // check if this host already have a session running
+      const existingSession = await COWsession.findOne({
+        host: hostId,
+        gamestatus: "running",
+      });
+
+      if (existingSession) {
+        // Host refreshed or reconnected! Grab the existing ID
+        sessionId = existingSession._id.toString();
+        console.log(`Resuming existing session: ${sessionId}`);
+      } else {
+        // Brand new session! Create it in the DB
+        const newSession = new COWsession(defaultSession(hostId));
+        await newSession.save();
+        sessionId = newSession._id.toString();
+        console.log(`Created brand new session: ${sessionId}`);
+      }
+
+      // Now that we guaranteed we have a valid sessionId, update our memory Maps
       hostConnections.set(sessionId, ws);
-      playerConnections.set(sessionId, new Set());
-    } else {
-      const session = COWsession.find({ host: req.session.user });
-      sessionId = session._id.tostring();
+
+      // Only create a new player set if one doesn't already exist for this session
+      if (!playerConnections.has(sessionId)) {
+        playerConnections.set(sessionId, new Set());
+      }
+    } catch (err) {
+      console.error("Failed to initialize host socket:", err);
+      ws.close(1011, "Internal Server Error");
+      return;
     }
 
-    // 3. Send the ID back to the host screen
-    const payloadHost = await renderTemplate(
-      "clash_of_word",
-      "lobbyCode",
-      { sessionId },
-      "#lobby-code",
-      "innerMorph",
-    );
-    ws.send(payloadHost);
+    async function sendPage() {
+      switch (pages) {
+        case "lobby":
+          // 3. Send the ID back to the host screen
+          const payloadHost = await renderTemplate(
+            "clash_of_word",
+            "lobbyCode",
+            { sessionId },
+            "#lobby-code",
+            "innerMorph",
+          );
+          ws.send(payloadHost);
+          break;
+        case "initialState":
+          console.log("startgame");
+          break;
+      }
+    }
+
+    ws.on("message", async (message) => {
+      const data = JSON.parse(message);
+
+      // Player Submits Word
+      if (data.type === "startGame") {
+        // TODO handle the host press start button
+      }
+    });
+
+    await sendPage();
 
     ws.on("close", async () => {
       console.log("Host disconnected");
