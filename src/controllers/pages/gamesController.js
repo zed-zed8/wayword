@@ -1,5 +1,9 @@
 import COWsession from "../../models/games/clash_of_word.js";
-import { playerConnections } from "../../websocket.js";
+import {
+  playerConnections,
+  hostConnections,
+  defaultSession,
+} from "../../websocket.js";
 
 const gamesController = (req, res) => {
   const isHTMXReq = req.get("HX-Request") === "true";
@@ -11,10 +15,30 @@ const gamesController = (req, res) => {
 };
 
 const lobbyHostController = async (req, res) => {
-  res.render("games/clash_of_word/host");
+  if (!req.session.pages) {
+    req.session.pages = "";
+  }
+  switch (req.session.pages) {
+    case "":
+      let hostId = req.session.user._id;
+      // creating new session in the DB
+      const newSession = new COWsession(defaultSession(hostId));
+      await newSession.save();
+      let sessionId = newSession._id.toString();
+      console.log(`Created brand new session: ${sessionId}`);
+      req.session.pages = "lobby";
+    case "lobby":
+      res.render("games/clash_of_word/host");
+      break;
+    default:
+      throw Error("error at gamesController");
+  }
 };
 
 const lobbyController = async (req, res) => {
+  if (!req.session.pages) {
+    req.session.pages = "";
+  }
   // Check for a specific parameter
   let currentSessionId;
   if (req.query.lobbyCode) {
@@ -22,53 +46,73 @@ const lobbyController = async (req, res) => {
   } else {
     currentSessionId = req.query.sessionId;
   }
+  console.log("currentSessionId : " + currentSessionId);
 
-  console.log(currentSessionId);
+  switch (req.session.pages) {
+    case "":
+      try {
+        // Fetch from DB to make sure the host room exists
+        const session = await COWsession.findById(currentSessionId);
+        if (!session) {
+          return res
+            .status(404)
+            .send("Game session not found. Check the code on the screen.");
+        }
 
-  try {
-    // 1. Fetch from DB to make sure the host room exists
-    const session = await COWsession.findById(currentSessionId);
-    if (!session) {
-      return res
-        .status(404)
-        .send("Game session not found. Check the code on the screen.");
-    }
+        // Determine slot based directly on database state instead of an in-memory counter
+        let playerSlot;
+        console.log("player1_id : " + session.player1.playerId);
+        console.log("player2_id : " + session.player2.playerId);
+        console.log("user_id : " + req.session.user._id);
+        if (
+          !session.player1.playerId ||
+          session.player1.playerId.toString() ===
+            req.session.user._id.toString()
+        ) {
+          playerSlot = "player1";
+        } else if (
+          !session.player2.playerId ||
+          session.player2.playerId.toString() ===
+            req.session.user._id.toString()
+        ) {
+          playerSlot = "player2";
+        } else {
+          return res
+            .status(400)
+            .send("Room is full! Cannot have more than 2 players.");
+        }
 
-    // 2. In-Memory Calculation: Verify the chosen slot is empty
-    let playerSlot;
-    if (
-      req.query.playerSlot === "player1" ||
-      req.query.playerSlot === "player2"
-    ) {
-      playerSlot = req.query.playerSlot;
-    } else {
-      playerSlot =
-        playerConnections.get(currentSessionId).size % 2 == 0
-          ? "player1"
-          : "player2";
-    }
-    const targetPlayer = session[playerSlot];
+        const targetPlayer = session[playerSlot];
+        // Assign a unique Object ID to this player controller
+        targetPlayer.playerId = req.session.user._id;
+        await session.save(); // save the changes
 
-    // Assign a unique Object ID to this player controller if not set
-    targetPlayer.playerId = req.session.user._id;
+        // Tell HTMX to update the browser URL bar with these extra query params
+        res.setHeader(
+          "HX-Push-Url",
+          `/lobby?sessionId=${currentSessionId}&playerSlot=${playerSlot}`,
+        );
 
-    // 3. Save the assignment to MongoDB
-    await session.save();
-
-    // Tell HTMX to update the browser URL bar with these extra query params
-    res.setHeader(
-      "HX-Push-Url",
-      `/lobby?sessionId=${currentSessionId}&playerSlot=${playerSlot}`,
-    );
-
-    res.render("games/clash_of_word/player", {
-      sessionId: currentSessionId,
-      playerSlot: playerSlot,
-    });
-  } catch (error) {
-    console.log(error);
-    res.status(500).send("Error joining the+ session. " + error.message);
-    // TODO error
+        res.render("games/clash_of_word/player", {
+          sessionId: currentSessionId,
+          playerSlot: playerSlot,
+        });
+      } catch (error) {
+        console.log(error);
+        res.status(500).send("Error joining the session. " + error.message);
+        // TODO error
+      }
+      req.session.pages = "lobby";
+      break;
+    case "lobby":
+      let playerSlot = req.query.playerSlot;
+      res.render("games/clash_of_word/player", {
+        sessionId: currentSessionId,
+        playerSlot: playerSlot,
+      });
+      break;
+    default:
+      throw Error("error at gamesController");
   }
 };
 

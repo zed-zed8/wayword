@@ -12,7 +12,6 @@ import COWsession from "./models/games/clash_of_word.js";
 //? controllers
 import host from "./ws-controllers/host.js";
 import player from "./ws-controllers/player.js";
-
 // Helper function to run express-session manually over the websocket request
 const runSession = (req) => {
   return new Promise((resolve) => {
@@ -29,13 +28,13 @@ const defaultSession = function (hostId) {
     host: hostId,
     gamestatus: "running",
     player1: {
-      playerId: new mongoose.Types.ObjectId(),
+      playerId: null,
       health: 100,
       word: "",
       status: "active",
     }, // Placeholder IDs until players join
     player2: {
-      playerId: new mongoose.Types.ObjectId(),
+      playerId: null,
       health: 100,
       word: "",
       status: "active",
@@ -50,8 +49,9 @@ const defaultSession = function (hostId) {
     },
   };
 };
+export { defaultSession };
 
-// Store active connections in memory
+// Store active connections and state in memory
 const hostConnections = new Map(); // sessionId -> Host WebSocket
 const playerConnections = new Map(); // sessionId -> Set of Player WebSockets
 
@@ -144,7 +144,7 @@ export function setupWebSocket(server) {
           "start_button",
           {},
           "#startButton",
-          "innerMorph",
+          "outerMorph",
         );
         hostConnections.get(sessionId).send(payloadHost);
       }
@@ -204,7 +204,6 @@ export function setupWebSocket(server) {
   wssHost.on("connection", async (ws, req) => {
     console.log("Host connected");
     // TODO (maybe) add page so that i can have two event (starting connecting, and start game button) inside the host screen
-    let pages = "lobby";
     let sessionId;
 
     let hostId = req.session.user?._id;
@@ -218,18 +217,13 @@ export function setupWebSocket(server) {
         host: hostId,
         gamestatus: "running",
       });
+      console.log("hostId :");
+      console.log(hostId);
+      console.log("session : ");
+      console.log(existingSession);
 
-      if (existingSession) {
-        // Host refreshed or reconnected! Grab the existing ID
-        sessionId = existingSession._id.toString();
-        console.log(`Resuming existing session: ${sessionId}`);
-      } else {
-        // Brand new session! Create it in the DB
-        const newSession = new COWsession(defaultSession(hostId));
-        await newSession.save();
-        sessionId = newSession._id.toString();
-        console.log(`Created brand new session: ${sessionId}`);
-      }
+      sessionId = existingSession?._id.toString();
+      console.log(`Resuming existing session: ${sessionId}`);
 
       // Now that we guaranteed we have a valid sessionId, update our memory Maps
       hostConnections.set(sessionId, ws);
@@ -245,7 +239,7 @@ export function setupWebSocket(server) {
     }
 
     async function sendPage() {
-      switch (pages) {
+      switch (req.session.pages) {
         case "lobby":
           // 3. Send the ID back to the host screen
           const payloadHost = await renderTemplate(
@@ -258,8 +252,14 @@ export function setupWebSocket(server) {
           ws.send(payloadHost);
           break;
         case "initialState":
-          console.log("startgame");
+          console.log("start game");
           break;
+        case "gameEnd":
+          console.log("end game result");
+          await COWsession.deleteMany({ gamestatus: "running" }).exec();
+          // clear the Map from RAM
+          hostConnections.clear();
+          playerConnections.clear();
       }
     }
 
@@ -276,9 +276,10 @@ export function setupWebSocket(server) {
 
     ws.on("close", async () => {
       console.log("Host disconnected");
-      await COWsession.deleteMany({ gamestatus: "running" }).exec();
       hostConnections.delete(sessionId);
       playerConnections.delete(sessionId);
+      hostConnections.delete("state"); // TODO remove this once there an actual end
+      playerConnections.delete("state"); // TODO remove this once there an actual end
     });
   });
 

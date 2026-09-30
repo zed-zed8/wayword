@@ -6,7 +6,14 @@ const playerSchema = new Schema({
   playerId: {
     type: Schema.Types.ObjectId,
     ref: "User", // Must match the string name used in mongoose.model
-    required: true, // Simulates a NOT NULL foreign key constraint
+    // required objectId, but allow null
+    validate: {
+      validator: function (value) {
+        // Allow explicit null, or check if it's a valid ObjectId instance
+        return value === null || value instanceof mongoose.Types.ObjectId;
+      },
+      message: "playerId must be a valid ObjectId or null.",
+    },
   },
   health: {
     type: Number,
