@@ -46,9 +46,9 @@ export const sessionMiddleware = session({
   resave: false,
   saveUninitialized: false,
   cookie: {
-    maxAge: 1000 * 60 * 60,
+    maxAge: 1000 * 60 * 60 * 24, // last 24 hour
     httpOnly: true,
-    secure: false, // Must be trxue for HTTPS
+    secure: false, // Must be true for HTTPS
     sameSite: "strict",
   },
 });
