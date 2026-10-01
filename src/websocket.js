@@ -281,7 +281,32 @@ export function setupWebSocket(server) {
     ws.on("message", async (message) => {
       const data = JSON.parse(message);
 
-      // Player Submits Word
+      // update host player joined list
+      if (data.type === "playerJoined") {
+        if (!req.session.playerJoined) {
+          req.session.playerJoined = [];
+        }
+        console.log("test" + req.session.playerJoined);
+        req.session.playerJoined.push(data.username);
+
+        // Force the session to save immediately
+        req.session.save((err) => {
+          if (err) console.error("Session save error:", err);
+          else console.log("Saved player list: " + req.session.playerJoined);
+        });
+      }
+      // update host button startable
+      if (data.type === "startButton") {
+        req.session.startButton = true;
+        console.log("test" + req.session.startButton);
+        // Force the session to save immediately
+        req.session.save((err) => {
+          if (err) console.error("Session save error:", err);
+          else console.log("Saved player list: " + req.session.playerJoined);
+        });
+      }
+
+      // host start game
       if (data.type === "startGame") {
         // TODO handle the host press start button
         req.session.pages = "gameRunning";

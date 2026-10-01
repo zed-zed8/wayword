@@ -1,1 +1,6 @@
-<li><%= username %> Joined</li>
+<li>
+  <%= username %> Joined
+  <!-- an immediate WebSocket JSON payload message to update the player count in session -->
+  <div hx-ws:send hx-trigger="load" hx-vals='{"type": "playerJoined", "username": "<%= username %>"}'>
+  </div>
+</li>

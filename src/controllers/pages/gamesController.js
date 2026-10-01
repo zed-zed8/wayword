@@ -15,7 +15,7 @@ const lobbyHostController = async (req, res) => {
     req.session.pages = "";
   }
   switch (req.session.pages) {
-    case "":
+    case "": {
       let hostId = req.session.user._id;
       // creating new session in the DB
       const newSession = new COWsession(defaultSession(hostId));
@@ -23,9 +23,27 @@ const lobbyHostController = async (req, res) => {
       let sessionId = newSession._id.toString();
       console.log(`Created brand new session: ${sessionId}`);
       req.session.pages = "lobby";
-    case "lobby":
-      res.render("games/clash_of_word/host");
+
+      res.render("games/clash_of_word/host", {
+        playerJoined: 0,
+        startButton: false,
+      });
       break;
+    }
+    case "lobby": {
+      let playerJoined = 0;
+      console.log("playerJoined : " + req.session.playerJoined);
+      if (req.session.playerJoined) {
+        playerJoined = req.session.playerJoined;
+      }
+      let startButton = 0;
+      console.log("startButton : " + req.session.startButton);
+      if (req.session.startButton) {
+        startButton = req.session.startButton;
+      }
+      res.render("games/clash_of_word/host", { playerJoined, startButton });
+      break;
+    }
     case "gameRunnning":
       console.log("host game is running");
       break;

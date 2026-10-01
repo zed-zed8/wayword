@@ -1,4 +1,7 @@
 <button hx-ws:send hx-vals='{"type": "startGame", "start": "true"}' class="bg-success-bg text-success-text hover:bg-success-text hover:text-success-bg  p-1 rounded">
   <!-- TODO add interactivity -->
   All Player Joined! play Now!
+  <!-- an immediate WebSocket JSON payload message to update the player count in session -->
+  <div hx-ws:send hx-trigger="load" hx-vals='{"type": "startButton", "startButton": "true"}'>
+  </div>
 </button>
