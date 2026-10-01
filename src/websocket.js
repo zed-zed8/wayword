@@ -55,8 +55,20 @@ export { defaultSession };
 const hostConnections = new Map(); // sessionId -> Host WebSocket
 const playerConnections = new Map(); // sessionId -> Set of Player WebSockets
 
-export { hostConnections };
-export { playerConnections };
+function sendToHost(sessionId, payloadHost, hostConnections) {
+  const hostSocket = hostConnections.get(sessionId);
+
+  // Update a host
+  hostSocket.send(payloadHost);
+}
+function sendToPlayers(sessionId, payloadPlayer, playerConnections) {
+  const playerSockets = playerConnections.get(sessionId);
+
+  // Update Both Players
+  for (const player of playerSockets) {
+    player.send(payloadPlayer);
+  }
+}
 
 /**
  * Simple async helper to render EJS files into HTML strings
@@ -101,7 +113,6 @@ const renderTemplate = (gamefilename, filename, data, hxtarget, hxswap) => {
     }
   });
 };
-export { renderTemplate };
 
 export function setupWebSocket(server) {
   const wssPlayer = new WebSocketServer({ noServer: true });
@@ -203,7 +214,6 @@ export function setupWebSocket(server) {
   //? Host websocket
   wssHost.on("connection", async (ws, req) => {
     console.log("Host connected");
-    // TODO (maybe) add page so that i can have two event (starting connecting, and start game button) inside the host screen
     let sessionId;
 
     let hostId = req.session.user?._id;
@@ -217,10 +227,6 @@ export function setupWebSocket(server) {
         host: hostId,
         gamestatus: "running",
       });
-      console.log("hostId :");
-      console.log(hostId);
-      console.log("session : ");
-      console.log(existingSession);
 
       sessionId = existingSession?._id.toString();
       console.log(`Resuming existing session: ${sessionId}`);
@@ -239,23 +245,32 @@ export function setupWebSocket(server) {
     }
 
     async function sendPage() {
+      let payloadHost;
       switch (req.session.pages) {
         case "lobby":
-          // 3. Send the ID back to the host screen
-          const payloadHost = await renderTemplate(
+          // Send the ID back to the host screen
+          payloadHost = await renderTemplate(
             "clash_of_word",
             "lobbyCode",
             { sessionId },
             "#lobby-code",
             "innerMorph",
           );
-          ws.send(payloadHost);
+          sendToHost(sessionId, payloadHost, hostConnections);
           break;
-        case "initialState":
-          console.log("start game");
+        case "gameRunning":
+          console.log("host start game");
+          payloadHost = await renderTemplate(
+            "clash_of_word",
+            "host_game_screen",
+            {},
+            "#game-screen",
+            "innerMorph",
+          );
+          sendToHost(sessionId, payloadHost, hostConnections);
           break;
         case "gameEnd":
-          console.log("end game result");
+          console.log("host end game result");
           await COWsession.deleteMany({ gamestatus: "running" }).exec();
           // clear the Map from RAM
           hostConnections.clear();
@@ -269,6 +284,18 @@ export function setupWebSocket(server) {
       // Player Submits Word
       if (data.type === "startGame") {
         // TODO handle the host press start button
+        req.session.pages = "gameRunning";
+        console.log("game is running");
+        console.log(req.session.pages);
+        await sendPage();
+        const payloadPlayer = await renderTemplate(
+          "clash_of_word",
+          "player_game_screen",
+          {},
+          "#game-screen",
+          "innerMorph",
+        );
+        sendToPlayers(sessionId, payloadPlayer, playerConnections);
       }
     });
 
@@ -278,8 +305,6 @@ export function setupWebSocket(server) {
       console.log("Host disconnected");
       hostConnections.delete(sessionId);
       playerConnections.delete(sessionId);
-      hostConnections.delete("state"); // TODO remove this once there an actual end
-      playerConnections.delete("state"); // TODO remove this once there an actual end
     });
   });
 

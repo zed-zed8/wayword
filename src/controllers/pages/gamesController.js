@@ -1,9 +1,5 @@
 import COWsession from "../../models/games/clash_of_word.js";
-import {
-  playerConnections,
-  hostConnections,
-  defaultSession,
-} from "../../websocket.js";
+import { defaultSession } from "../../websocket.js";
 
 const gamesController = (req, res) => {
   const isHTMXReq = req.get("HX-Request") === "true";
@@ -29,6 +25,12 @@ const lobbyHostController = async (req, res) => {
       req.session.pages = "lobby";
     case "lobby":
       res.render("games/clash_of_word/host");
+      break;
+    case "gameRunnning":
+      console.log("host game is running");
+      break;
+    case "gameEnd":
+      console.log("host end game result");
       break;
     default:
       throw Error("error at gamesController");
@@ -110,6 +112,12 @@ const lobbyController = async (req, res) => {
         sessionId: currentSessionId,
         playerSlot: playerSlot,
       });
+      break;
+    case "gameRunnning":
+      console.log("player game is running");
+      break;
+    case "gameEnd":
+      console.log("host end game result");
       break;
     default:
       throw Error("error at gamesController");
