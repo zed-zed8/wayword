@@ -1,2 +1,58 @@
-<!-- TODO make player initial game screen -->
-<div>Gaming</div>
+<!-- TODO make player initial/running game screen -->
+<div>Host Username: <%= currentUser.username %></div>
+<h3>Round <%= roundCount %></h3>
+
+<div id="player1" class="flex flex-col">
+  <div>player1</div>
+  <div>
+    username: <%= player1.username %>
+  </div>
+  <div>
+    health: <%= player1.health %>
+  </div>
+  <div>
+    status: <%= player1.status %>
+  </div>
+  <% if (player1.status === "active") { %>
+  <form hx-ws:send class="bg-amber-300">
+    <input type="hidden" name="type" value="submitWord">
+    <input type="text" name="submittedWord" placeholder="word...">
+    <button>Submit Word</button>
+  </form>
+  <% } else { %>
+  <div>Waiting...</div>
+  <% } %>
+</div>
+
+<hr>
+
+<div id="round-result" class="flex flex-col">
+</div>
+
+<hr>
+
+<div id="player2" class="flex flex-col">
+  <div>player2</div>
+  <div>
+    username: <%= player2.username %>
+  </div>
+  <div>
+    health: <%= player2.health %>
+  </div>
+  <div>
+    status: <%= player2.status %>
+  </div>
+  <% if (player2.status === "active") { %>
+  <form hx-ws:send class="bg-amber-300">
+    <input type="hidden" name="type" value="submitWord">
+    <input type="text" name="submittedWord" placeholder="word...">
+    <button>Submit Word</button>
+  </form>
+  <% } else { %>
+  <div>Waiting...</div>
+  <% } %>
+</div>
+
+<div>
+  Available Letter [<%= availableLetter.join(", ") %>]
+</div>

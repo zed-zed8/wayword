@@ -48,7 +48,17 @@ const roundSchema = new Schema({
   word2: {
     type: String,
   },
-  avaiableLetter: {
+  score1: {
+    type: Number,
+  },
+  score2: {
+    type: Number,
+  },
+  result: {
+    type: String,
+    enum: ["player1win", "player2win", "draw"],
+  },
+  availableLetter: {
     type: [String],
     required: true,
   },
@@ -68,7 +78,11 @@ const sessionSchema = new Schema(
     },
     player1: playerSchema,
     player2: playerSchema,
-    round: roundSchema,
+    currentAvailableLetter: {
+      type: [String],
+      required: true,
+    },
+    rounds: [roundSchema],
   },
   {
     // CRITICAL: Prevents a player from submitting two moves at the exact same time

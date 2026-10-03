@@ -1,0 +1,12 @@
+<div><%= round.round %></div>
+<div>Result</div>
+<div>player 1 score: <%= round.score1 %></div>
+<div>player 2 score: <%= round.score2 %></div>
+<div><%= winningPlayer %> attack with: <%= difference %></div>
+<div>result: <%= round.result %></div>
+
+<% if (isEnd) { %>
+<button hx-ws:send hx-vals='{"type": "endGame"}'>End</button>
+<% } else { %>
+<button hx-ws:send hx-vals='{"type": "startGame"}'>Continue Game</button>
+<% } %>

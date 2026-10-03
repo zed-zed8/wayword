@@ -13,12 +13,12 @@
     <div>Joined Player</div>
     <ul id="joined-player">
       <% for( let index = 0; index < playerJoined.length; index++ ) { %>
-      <li><%= playerJoined[index] %> Joined</li>
+      <li><%= playerJoined[index].username %> Joined</li>
       <% } %>
     </ul>
 
     <div id="startButton">
-      <% if (startButton) { %>
+      <% if (startable) { %>
       <button hx-ws:send hx-vals='{"type": "startGame", "start": "true"}' class="bg-success-bg text-success-text hover:bg-success-text hover:text-success-bg  p-1 rounded">
         <!-- TODO add interactivity -->
         All Player Joined! play Now!

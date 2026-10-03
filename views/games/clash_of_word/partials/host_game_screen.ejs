@@ -1,2 +1,40 @@
 <!-- TODO make host initial game screen -->
-<div>Gaming Host</div>
+<h1>Gaming Host</h1>
+<h3>Round <%= roundCount %></h3>
+
+<div id="player1" class="flex flex-col">
+  <div>player1</div>
+  <div>
+    username: <%= player1.username %>
+  </div>
+  <div>
+    health: <%= player1.health %>
+  </div>
+  <div>
+    status: <%= player1.status %>
+  </div>
+</div>
+
+<hr>
+
+<div id="round-result" class="flex flex-col">
+</div>
+
+<hr>
+
+<div id="player2" class="flex flex-col">
+  <div>player2</div>
+  <div>
+    username: <%= player2.username %>
+  </div>
+  <div>
+    health: <%= player2.health %>
+  </div>
+  <div>
+    status: <%= player2.status %>
+  </div>
+</div>
+
+<div>
+  Available Letter [<%= availableLetter.join(", ") %>]
+</div>

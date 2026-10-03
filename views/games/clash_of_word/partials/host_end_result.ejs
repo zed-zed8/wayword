@@ -1,0 +1,35 @@
+<!-- TODO make host initial game screen -->
+<h1>Gaming Host</h1>
+<h3>Game Last <%= roundCount %> Round</h3>
+
+<div class="flex flex-col">
+  <div><%= winningPlayer %></div>
+</div>
+
+<div class="flex flex-col">
+  <div>player1</div>
+  <div>
+    username: <%= player1.username %>
+  </div>
+
+  <div>player2</div>
+  <div>
+    username: <%= player2.username %>
+  </div>
+</div>
+
+<div class="flex flex-col">
+  <% rounds.forEach(R => { %>
+  <div class="flex">
+    <div>Round Number: <%= R.round %></div>
+    <div>Player 1 Health: <%= R.player1health %></div>
+    <div>Player 2 Health: <%= R.player2health %></div>
+    <div>Word 1: <%= R.word1 %></div>
+    <div>Word 2: <%= R.word2 %></div>
+    <div>Score 1: <%= R.score1 %></div>
+    <div>Score 2: <%= R.score2 %></div>
+    <div>Result: <%= R.result %></div>
+    <div>availableLetter: <%= R.availableLetter %></div>
+  </div>
+  <% }) %>
+</div>

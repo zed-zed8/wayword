@@ -1,21 +1,24 @@
 import { WebSocketServer } from "ws";
 import ejs from "ejs";
 import path from "path";
-import mongoose from "mongoose";
 import { fileURLToPath } from "url";
 
 import { sessionMiddleware } from "./app.js";
 
-//? models
-import COWsession from "./models/games/clash_of_word.js";
-
 //? controllers
 import host from "./ws-controllers/host.js";
 import player from "./ws-controllers/player.js";
-// Helper function to run express-session manually over the websocket request
+// Helper function to run express-session manually over the websocket request // req.session
 const runSession = (req) => {
-  return new Promise((resolve) => {
-    sessionMiddleware(req, {}, () => resolve());
+  return new Promise((resolve, reject) => {
+    sessionMiddleware(req, {}, (error) => {
+      if (error) {
+        reject(error);
+        return;
+      }
+
+      resolve();
+    });
   });
 };
 
@@ -39,14 +42,8 @@ const defaultSession = function (hostId) {
       word: "",
       status: "active",
     },
-    round: {
-      round: 1,
-      player1health: 100,
-      player2health: 100,
-      word1: "",
-      word2: "",
-      availableLetters: ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"],
-    },
+    currentAvailableLetter: [],
+    rounds: [],
   };
 };
 export { defaultSession };
@@ -55,13 +52,16 @@ export { defaultSession };
 const hostConnections = new Map(); // sessionId -> Host WebSocket
 const playerConnections = new Map(); // sessionId -> Set of Player WebSockets
 
-function sendToHost(sessionId, payloadHost, hostConnections) {
+export { hostConnections };
+export { playerConnections };
+
+function sendToHost({ sessionId, payloadHost, hostConnections }) {
   const hostSocket = hostConnections.get(sessionId);
 
   // Update a host
   hostSocket.send(payloadHost);
 }
-function sendToPlayers(sessionId, payloadPlayer, playerConnections) {
+function sendToPlayers({ sessionId, payloadPlayer, playerConnections }) {
   const playerSockets = playerConnections.get(sessionId);
 
   // Update Both Players
@@ -69,6 +69,8 @@ function sendToPlayers(sessionId, payloadPlayer, playerConnections) {
     player.send(payloadPlayer);
   }
 }
+export { sendToPlayers };
+export { sendToHost };
 
 /**
  * Simple async helper to render EJS files into HTML strings
@@ -80,7 +82,7 @@ function sendToPlayers(sessionId, payloadPlayer, playerConnections) {
  * @param {String} hxswap ex: innerHTML, innerMorph (htmx swap attributes)
  * @return {JSON.stringify} return json string
  */
-const renderTemplate = (gamefilename, filename, data, hxtarget, hxswap) => {
+function renderTemplate(gamefilename, filename, data, hxtarget, hxswap) {
   return new Promise((resolve, reject) => {
     try {
       const templatePath = path.join(
@@ -112,7 +114,8 @@ const renderTemplate = (gamefilename, filename, data, hxtarget, hxswap) => {
       reject(e);
     }
   });
-};
+}
+export { renderTemplate };
 
 export function setupWebSocket(server) {
   const wssPlayer = new WebSocketServer({ noServer: true });
@@ -121,86 +124,10 @@ export function setupWebSocket(server) {
   //TODO implement game
   //? Player websocket
   wssPlayer.on("connection", async (ws, req) => {
-    console.log("Client connected");
-
-    const url = new URL(req.url, `http://${req.headers.host}`);
-    // Easily grab the query variables sent by HTMX
-    const sessionId = url.searchParams.get("sessionId");
-    const playerSlot = url.searchParams.get("playerSlot"); // 'player1' or 'player2'
-    console.log(sessionId);
-    console.log(playerSlot);
-
-    // INITIALIZE ONLY ONCE: Check if a player exists, if not, create it
-    const playerConn = playerConnections.get(sessionId);
-    if (playerConn && !playerConn.has(ws)) {
-      playerConnections.get(sessionId).add(ws);
-
-      const username = req.session.user.username;
-      const payloadHost = await renderTemplate(
-        "clash_of_word",
-        "joined_player",
-        { username },
-        "#joined-player",
-        "beforeend",
-      );
-
-      // Update Host Screen to add the user there
-      hostConnections.get(sessionId).send(payloadHost);
-
-      if (playerConnections.get(sessionId).size == 2) {
-        console.log("play");
-
-        const payloadHost = await renderTemplate(
-          "clash_of_word",
-          "start_button",
-          {},
-          "#startButton",
-          "outerMorph",
-        );
-        hostConnections.get(sessionId).send(payloadHost);
-      }
-      console.log(req.session.user);
-    }
+    let sessionId = await player.connection(ws, req);
 
     ws.on("message", async (message) => {
-      const data = JSON.parse(message);
-
-      // Player Submits Word
-      if (data.type === "submitWord") {
-        const session = await COWsession.findById(sessionId);
-
-        const activePlayer = session[playerSlot];
-        activePlayer.word = data.submittedWord;
-        activePlayer.status = "waiting";
-
-        // TODO [RUN YOUR IN-MEMORY CALCULATIONS HERE WHEN BOTH ARE WAITING...]
-
-        await session.save();
-
-        // TODO BROADCAST TO EVERYONE
-        const payloadHost = await renderTemplate(
-          "clash_of_word",
-          "host_game_screen",
-          {},
-          "#game-screen",
-          "innerMorph",
-        );
-        const payloadClient = renderTemplate(
-          "clash_of_word",
-          "player_game_screen",
-          {},
-          "#game-screen",
-          "innerMorph",
-        );
-
-        // Update Host Screen
-        hostConnections.get(sessionId).send(payloadHost);
-
-        // Update Both Players
-        for (const client of playerConnections.get(sessionId)) {
-          client.send(payloadClient);
-        }
-      }
+      await player.message(ws, message, req);
     });
 
     ws.on("close", () => {
@@ -213,123 +140,15 @@ export function setupWebSocket(server) {
 
   //? Host websocket
   wssHost.on("connection", async (ws, req) => {
-    console.log("Host connected");
-    let sessionId;
-
-    let hostId = req.session.user?._id;
-    if (!hostId) {
-      ws.close(4001, "Unauthorized");
-      return;
-    }
-    try {
-      // check if this host already have a session running
-      const existingSession = await COWsession.findOne({
-        host: hostId,
-        gamestatus: "running",
-      });
-
-      sessionId = existingSession?._id.toString();
-      console.log(`Resuming existing session: ${sessionId}`);
-
-      // Now that we guaranteed we have a valid sessionId, update our memory Maps
-      hostConnections.set(sessionId, ws);
-
-      // Only create a new player set if one doesn't already exist for this session
-      if (!playerConnections.has(sessionId)) {
-        playerConnections.set(sessionId, new Set());
-      }
-    } catch (err) {
-      console.error("Failed to initialize host socket:", err);
-      ws.close(1011, "Internal Server Error");
-      return;
-    }
-
-    async function sendPage() {
-      let payloadHost;
-      switch (req.session.pages) {
-        case "lobby":
-          // Send the ID back to the host screen
-          payloadHost = await renderTemplate(
-            "clash_of_word",
-            "lobbyCode",
-            { sessionId },
-            "#lobby-code",
-            "innerMorph",
-          );
-          sendToHost(sessionId, payloadHost, hostConnections);
-          break;
-        case "gameRunning":
-          console.log("host start game");
-          payloadHost = await renderTemplate(
-            "clash_of_word",
-            "host_game_screen",
-            {},
-            "#game-screen",
-            "innerMorph",
-          );
-          sendToHost(sessionId, payloadHost, hostConnections);
-          break;
-        case "gameEnd":
-          console.log("host end game result");
-          await COWsession.deleteMany({ gamestatus: "running" }).exec();
-          // clear the Map from RAM
-          hostConnections.clear();
-          playerConnections.clear();
-      }
-    }
+    let sessionId = await host.connect(ws, req);
 
     ws.on("message", async (message) => {
-      const data = JSON.parse(message);
-
-      // update host player joined list
-      if (data.type === "playerJoined") {
-        if (!req.session.playerJoined) {
-          req.session.playerJoined = [];
-        }
-        console.log("test" + req.session.playerJoined);
-        req.session.playerJoined.push(data.username);
-
-        // Force the session to save immediately
-        req.session.save((err) => {
-          if (err) console.error("Session save error:", err);
-          else console.log("Saved player list: " + req.session.playerJoined);
-        });
-      }
-      // update host button startable
-      if (data.type === "startButton") {
-        req.session.startButton = true;
-        console.log("test" + req.session.startButton);
-        // Force the session to save immediately
-        req.session.save((err) => {
-          if (err) console.error("Session save error:", err);
-          else console.log("Saved player list: " + req.session.playerJoined);
-        });
-      }
-
-      // host start game
-      if (data.type === "startGame") {
-        // TODO handle the host press start button
-        req.session.pages = "gameRunning";
-        console.log("game is running");
-        console.log(req.session.pages);
-        await sendPage();
-        const payloadPlayer = await renderTemplate(
-          "clash_of_word",
-          "player_game_screen",
-          {},
-          "#game-screen",
-          "innerMorph",
-        );
-        sendToPlayers(sessionId, payloadPlayer, playerConnections);
-      }
+      await host.message(ws, message, req);
     });
-
-    await sendPage();
 
     ws.on("close", async () => {
       console.log("Host disconnected");
       hostConnections.delete(sessionId);
-      playerConnections.delete(sessionId);
     });
   });
 
