@@ -6,7 +6,7 @@
 <div>result: <%= round.result %></div>
 
 <% if (isEnd) { %>
-<button hx-ws:send hx-vals='{"type": "endGame"}' class="p-2 border border-rose-300">End</button>
+<button hx-ws:send hx-vals='{"type": "endGame"}' class="p-1 bg-rose-700">End</button>
 <% } else { %>
-<button hx-ws:send hx-vals='{"type": "startGame"}' class="p-2 border border-green-300">Continue Game</button>
+<button hx-ws:send hx-vals='{"type": "startGame"}' class="p-1 bg-green-800">Continue Game</button>
 <% } %>

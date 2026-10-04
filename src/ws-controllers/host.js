@@ -143,6 +143,7 @@ const host = {
       if (!req.session.pages) {
         req.session.pages = "lobby";
       }
+      ws.session = req.session;
 
       // check host pages
       switch (req.session.pages) {
@@ -577,19 +578,25 @@ const host = {
       // Update Both Players
       sendToPlayers({ sessionId, payloadPlayer, playerConnections });
 
-      // The game is finished; active in-memory connection groups can be removed.
-      playerConnections.delete(sessionId);
+      const playerSockets = playerConnections.get(sessionId);
 
-      for (const ws of playerConnections) {
-        delete ws.session.pages;
-        delete ws.session.cowSessionId;
-        ws.session.save();
+      if (playerSockets) {
+        for (const playerWs of playerSockets) {
+          console.log("playerWs.session:", playerWs.session);
+          delete playerWs.session.pages;
+          delete playerWs.session.cowSessionId;
+
+          await playerWs.session.save();
+        }
       }
+      console.log("playerWs.session:", ws.session);
       delete ws.session.pages;
       delete ws.session.cowSessionId;
       delete ws.session.playerJoined;
-      ws.session.save();
+      await ws.session.save();
 
+      // The game is finished; active in-memory connection groups can be removed.
+      playerConnections.delete(sessionId);
       return;
     }
   },

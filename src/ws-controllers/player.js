@@ -62,6 +62,7 @@ const player = {
       ws.playerSlot = playerSlot;
       ws.playerId = userId.toString();
       ws.username = req.session.user.username;
+      ws.session = req.session;
 
       if (!playerConnections.has(sessionId)) {
         playerConnections.set(sessionId, new Set());
