@@ -240,16 +240,6 @@ const host = {
             winningPlayer = "Player 1 Win";
           }
 
-          for (const ws of playerConnections) {
-            delete ws.session.pages;
-            delete ws.session.cowSessionId;
-            ws.session.save();
-          }
-          delete ws.session.pages;
-          delete ws.session.cowSessionId;
-          delete ws.session.playerJoined;
-          ws.session.save();
-
           const payloadHost = await renderTemplate(
             "clash_of_word",
             "host_end_result",
@@ -589,6 +579,17 @@ const host = {
 
       // The game is finished; active in-memory connection groups can be removed.
       playerConnections.delete(sessionId);
+
+      for (const ws of playerConnections) {
+        delete ws.session.pages;
+        delete ws.session.cowSessionId;
+        ws.session.save();
+      }
+      delete ws.session.pages;
+      delete ws.session.cowSessionId;
+      delete ws.session.playerJoined;
+      ws.session.save();
+
       return;
     }
   },

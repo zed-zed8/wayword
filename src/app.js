@@ -8,6 +8,7 @@ import dns from "dns";
 import dotenv from "dotenv";
 import connect_mongodb_session from "connect-mongodb-session";
 import { setupWebSocket } from "./websocket.js";
+import os from "os";
 
 // custom
 import indexRouter from "./routes/index_routes.js";
@@ -90,14 +91,27 @@ const dbURI = process.env.MONGODB_URI;
 
 mongoose
   .connect(dbURI)
-  .then((result) => {
+  .then(() => {
     console.log("connected to db : ");
     // console.log(result);
+    //? get Ip
+    const interfaces = os.networkInterfaces();
+
+    let hostIp;
+    for (const name in interfaces) {
+      for (const network of interfaces[name]) {
+        if (network.family === "IPv4" && !network.internal) {
+          console.info(`${name}: ${network.address}`);
+          hostIp = network.address;
+        }
+      }
+    }
+
     //? listen
     const port = process.env.PORT || 3000;
-    const host = process.env.HOST || "127.0.0.1";
+    const host = process.env.HOST || "0.0.0.0";
     server.listen(port, host, () =>
-      console.log(`App listening on port ${port}!`),
+      console.info(`App listening on port ${hostIp}:${port}`),
     );
   })
   .catch((err) => console.log("error: " + err));
