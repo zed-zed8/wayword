@@ -1,0 +1,29 @@
+<!-- Final result for the player -->
+<h2>Player Game End</h2>
+<h3>Game Last <%= roundCount %> Round</h3>
+<h3><a href="/back" hx-target="#body" hx-swap="innerMorph">Go Home</a></h3>
+
+<div class="flex flex-col">
+  <div><%= winningPlayer %></div>
+</div>
+
+<div class="flex flex-col">
+  <div>Player 1: <%= player1.playerId?.username ?? "" %></div>
+  <div>Player 2: <%= player2.playerId?.username ?? "" %></div>
+</div>
+
+<div class="flex flex-col gap-2 overflow-auto">
+  <% rounds.forEach((round) => { %>
+  <div class="flex gap-2">
+    <div>Round Number: <%= round.round %></div>
+    <div>Player 1 Health: <%= round.player1health %></div>
+    <div>Player 2 Health: <%= round.player2health %></div>
+    <div>Word 1: <%= round.word1 %></div>
+    <div>Word 2: <%= round.word2 %></div>
+    <div>Score 1: <%= round.score1 %></div>
+    <div>Score 2: <%= round.score2 %></div>
+    <div>Result: <%= round.result %></div>
+    <div>Available Letter: <%= round.availableLetter.join(", ") %></div>
+  </div>
+  <% }) %>
+</div>

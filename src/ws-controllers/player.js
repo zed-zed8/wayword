@@ -1,3 +1,5 @@
+import mongoose from "mongoose";
+
 //? models
 import COWsession from "../models/games/clash_of_word.js";
 
@@ -7,10 +9,17 @@ import {
   renderTemplate,
   sendToHost,
   sendToPlayers,
+  sendToPlayer,
 } from "../websocket.js";
 
 const player = {
   async connection(ws, req) {
+    const userId = req.session.user?._id;
+
+    if (!userId || !mongoose.isValidObjectId(userId)) {
+      ws.close(4001, "Unauthorized");
+      return null;
+    }
     console.log("Client connected");
 
     // Easily grab the query variables sent by HTMX
@@ -20,65 +29,156 @@ const player = {
     console.log("Session Id: " + sessionId);
     console.log("Player Slot: " + playerSlot);
 
-    // INITIALIZE ONLY ONCE: Check if a player exists, if not, create it
-    const playerConn = playerConnections.get(sessionId);
     if (
-      (req.session.pages === "" || req.session.pages === "lobby") &&
-      playerConn &&
-      !playerConn.has(ws)
+      !sessionId ||
+      !mongoose.isValidObjectId(sessionId) ||
+      (playerSlot !== "player1" && playerSlot !== "player2")
     ) {
-      playerConnections.get(sessionId).add(ws);
-      console.log("A new player connected with ws:");
-      // console.log(ws);
-
-      const username = req.session.user?.username;
-      const playerId = req.session.user._id;
-
-      // Update Host Screen to add the user there
-      const payloadHost = await renderTemplate(
-        "clash_of_word",
-        "joined_player",
-        { username, playerId },
-        "#joined-player",
-        "beforeend",
-      );
-      sendToHost({ sessionId, payloadHost, hostConnections });
-
-      // check if there are 2 players
-      if (playerConnections.get(sessionId).size == 2) {
-        console.log("play");
-
-        // send the play button to the host
-        const payloadHost = await renderTemplate(
-          "clash_of_word",
-          "start_button",
-          {},
-          "#startButton",
-          "outerMorph",
-        );
-        sendToHost({ sessionId, payloadHost, hostConnections });
-      }
+      ws.close(4002, "Invalid player connection data");
+      return null;
     }
 
-    return sessionId;
+    try {
+      const session = await COWsession.findById(sessionId);
+
+      if (!session || session.gamestatus !== "running") {
+        ws.close(4004, "Game session not found");
+        return null;
+      }
+
+      const assignedPlayer = session[playerSlot];
+
+      if (
+        !assignedPlayer?.playerId ||
+        assignedPlayer.playerId.toString() !== userId.toString()
+      ) {
+        ws.close(4003, "You are not assigned to this player slot");
+        return null;
+      }
+
+      // Store the identity on the WebSocket so later messages do not have to
+      // trust the playerSlot supplied by the browser.
+      ws.sessionId = sessionId;
+      ws.playerSlot = playerSlot;
+      ws.playerId = userId.toString();
+      ws.username = req.session.user.username;
+
+      if (!playerConnections.has(sessionId)) {
+        playerConnections.set(sessionId, new Set());
+      }
+
+      const connections = playerConnections.get(sessionId);
+
+      // A reconnect should not announce the same player as a new player.
+      const alreadyConnected = [...connections].some(
+        (connection) => connection.playerId === ws.playerId,
+      );
+
+      connections.add(ws);
+      console.log("A new player connected with ws:");
+
+      if (!alreadyConnected) {
+        // Update Host Screen to add the user there
+        const payloadHost = await renderTemplate(
+          "clash_of_word",
+          "joined_player",
+          {
+            username: ws.username,
+            playerId: ws._id,
+          },
+          "#joined-player",
+          "beforeend",
+        );
+        sendToHost({ sessionId, payloadHost, hostConnections });
+
+        // check if there are 2 players
+        if (playerConnections.get(sessionId).size >= 2) {
+          console.log("play");
+
+          // send the play button to the host
+          const payloadHost = await renderTemplate(
+            "clash_of_word",
+            "start_button",
+            {},
+            "#startButton",
+            "outerMorph",
+          );
+          sendToHost({ sessionId, payloadHost, hostConnections });
+        }
+      }
+
+      return sessionId;
+    } catch (error) {
+      console.error("Failed to initialize player socket:", error);
+
+      if (ws.readyState === ws.OPEN) {
+        ws.close(1011, "Internal Server Error");
+      }
+
+      return null;
+    }
   },
   // TODO finish this
   async message(ws, message, req) {
-    const data = JSON.parse(message);
+    let data;
 
-    const url = new URL(req.url, `http://${req.headers.host}`);
-    const sessionId = url.searchParams.get("sessionId"); // sessionId = clash_of_word_id
-    const playerSlot = url.searchParams.get("playerSlot"); // 'player1' or 'player2'
+    try {
+      data = JSON.parse(message.toString());
+    } catch {
+      console.warn("Player sent invalid JSON.");
+      return;
+    }
+
+    if (!data || typeof data.type !== "string") {
+      return;
+    }
+
+    const sessionId = ws.sessionId; // sessionId = clash_of_word_id
+    const playerSlot = ws.playerSlot; // 'player1' or 'player2'
+    const userId = req.session.user?._id;
+
+    if (!sessionId || !playerSlot || !userId) {
+      console.error(
+        "error at player.js ws on either !sessionId || !playerSlot || !userId",
+      );
+      return;
+    }
 
     // Player Submits Word
     // expected data: { summittedWord: "" }
     if (data.type === "submitWord") {
       const session = await COWsession.findById(sessionId);
 
+      if (!session || session.gamestatus !== "running") {
+        console.error('playerjs: !session || session.gamestatus !== "running"');
+        return;
+      }
+
+      // Never trust the slot from the request URL after connection.
       const activePlayer = session[playerSlot];
 
+      if (
+        !activePlayer?.playerId ||
+        activePlayer.playerId.toString() !== userId.toString()
+      ) {
+        console.error("playerjs: line ~163~ on submitWord");
+        return;
+      }
+
+      // Do not allow a player to submit again until the next round.
+      if (activePlayer.status !== "active") {
+        return;
+      }
+
+      if (
+        typeof data.submittedWord !== "string" ||
+        data.submittedWord.trim().length === 0
+      ) {
+        return;
+      }
+
       // TODO later verify word
-      activePlayer.word = data.submittedWord;
+      activePlayer.word = data.submittedWord.trim();
       activePlayer.status = "waiting";
 
       // save session
@@ -89,8 +189,30 @@ const player = {
         session.player1.status == "waiting" &&
         session.player2.status == "waiting"
       ) {
-        // handle both player waiting
-        // send round result to host
+        // Both players are now waiting. Update both player cards first so
+        // neither client keeps displaying a stale submit form.
+        for (const targetPlayerSlot of ["player1", "player2"]) {
+          const payloadPlayer = await renderTemplate(
+            "clash_of_word",
+            "player_side",
+            {
+              player1: session.player1,
+              player2: session.player2,
+              playerSlot: targetPlayerSlot,
+              currentUser: req.session.user,
+              availableLetter: session.currentAvailableLetter,
+            },
+            `#${targetPlayerSlot}`,
+            "innerMorph",
+          );
+
+          sendToPlayers({
+            sessionId,
+            payloadPlayer,
+            playerConnections,
+          });
+        }
+
         const payloadHost = await renderTemplate(
           "clash_of_word",
           "host_round_result",
@@ -105,46 +227,54 @@ const player = {
         );
         // Update Host Screen
         sendToHost({ sessionId, payloadHost, hostConnections });
+        return;
       }
-      else {
-        let whichPlayer;
-        if (session.player1.status == "waiting") {
-          whichPlayer = "player1";
-        } else if (session.player2.status == "waiting") {
-          whichPlayer = "player2";
-        }
 
-        // send the updated round to everyone
-        const payloadHost = await renderTemplate(
-          "clash_of_word",
-          "player_side",
-          {
-            player1: session.player1,
-            player2: session.player2,
-            currentUser: req.session.user,
-            availableLetter: session.currentAvailableLetter,
-          },
-          `#${whichPlayer}`,
-          "innerMorph",
-        );
-        const payloadPlayer = await renderTemplate(
-          "clash_of_word",
-          "player_side",
-          {
-            player1: session.player1,
-            player2: session.player2,
-            currentUser: req.session.user,
-            availableLetter: session.currentAvailableLetter,
-          },
-          `#${whichPlayer}`,
-          "innerMorph",
-        );
-
-        // Update Host Screen
-        sendToHost({ sessionId, payloadHost, hostConnections });
-        // Update Both Players
-        sendToPlayers({ sessionId, payloadPlayer, playerConnections });
+      let whichPlayer;
+      if (session.player1.status == "waiting") {
+        whichPlayer = "player1";
+      } else if (session.player2.status == "waiting") {
+        whichPlayer = "player2";
       }
+
+      if (!whichPlayer) {
+        console.error("player.js: !whichPlayer");
+        return;
+      }
+
+      // send the updated round to everyone
+      const payloadHost = await renderTemplate(
+        "clash_of_word",
+        "player_side",
+        {
+          player1: session.player1,
+          player2: session.player2,
+          playerSlot: whichPlayer,
+          currentUser: req.session.user,
+          availableLetter: session.currentAvailableLetter,
+        },
+        `#${whichPlayer}`,
+        "innerMorph",
+      );
+      const payloadPlayer = await renderTemplate(
+        "clash_of_word",
+        "player_side",
+        {
+          player1: session.player1,
+          player2: session.player2,
+          playerSlot: whichPlayer,
+          currentUser: req.session.user,
+          availableLetter: session.currentAvailableLetter,
+        },
+        `#${whichPlayer}`,
+        "innerMorph",
+      );
+
+      // Update Host Screen
+      sendToHost({ sessionId, payloadHost, hostConnections });
+      // Update Both Players
+      sendToPlayers({ sessionId, payloadPlayer, playerConnections });
+      sendToPlayer({ playerSocket: ws, payloadPlayer });
     }
   },
 };

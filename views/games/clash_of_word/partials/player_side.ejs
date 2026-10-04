@@ -1,11 +1,22 @@
-  <div>player2</div>
-  <div>
-    username: <%= player2.username %>
-  </div>
-  <div>
-    health: <%= player2.health %>
-  </div>
-  <div>
-    status: <%= player2.status %>
-  </div>
-  <div>Waiting...</div>
+<%
+  const targetPlayer = playerSlot === "player1" ? player1 : player2;
+%>
+<div><%= playerSlot %></div>
+<div>
+  username: <%= targetPlayer.playerId?.username ?? "" %>
+</div>
+<div>
+  health: <%= targetPlayer.health %>
+</div>
+<div>
+  status: <%= targetPlayer.status %>
+</div>
+<% if (targetPlayer.status === "active") { %>
+<form hx-ws:send class="bg-amber-300">
+  <input type="hidden" name="type" value="submitWord">
+  <input type="text" name="submittedWord" placeholder="word..." required>
+  <button>Submit Word</button>
+</form>
+<% } else { %>
+<div>Waiting...</div>
+<% } %>

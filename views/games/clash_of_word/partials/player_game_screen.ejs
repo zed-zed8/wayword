@@ -1,11 +1,13 @@
 <!-- TODO make player initial/running game screen -->
-<div>Host Username: <%= currentUser.username %></div>
-<h3>Round <%= roundCount %></h3>
+<div>Host Username: <%= hostUser.username %>
+</div>
+<h3>Round <%= roundCount %>
+</h3>
 
 <div id="player1" class="flex flex-col">
   <div>player1</div>
   <div>
-    username: <%= player1.username %>
+    username: <%= player1.playerId?.username ?? "" %>
   </div>
   <div>
     health: <%= player1.health %>
@@ -13,7 +15,9 @@
   <div>
     status: <%= player1.status %>
   </div>
-  <% if (player1.status === "active") { %>
+
+  <% if (playerSlot==="player1" ) { %>
+  <% if (player1.status==="active" ) { %>
   <form hx-ws:send class="bg-amber-300">
     <input type="hidden" name="type" value="submitWord">
     <input type="text" name="submittedWord" placeholder="word...">
@@ -21,6 +25,7 @@
   </form>
   <% } else { %>
   <div>Waiting...</div>
+  <% } %>
   <% } %>
 </div>
 
@@ -42,14 +47,16 @@
   <div>
     status: <%= player2.status %>
   </div>
+  <% if (playerSlot === "player2") { %>
   <% if (player2.status === "active") { %>
   <form hx-ws:send class="bg-amber-300">
     <input type="hidden" name="type" value="submitWord">
-    <input type="text" name="submittedWord" placeholder="word...">
+    <input type="text" name="submittedWord" placeholder="word..." required>
     <button>Submit Word</button>
   </form>
   <% } else { %>
   <div>Waiting...</div>
+  <% } %>
   <% } %>
 </div>
 

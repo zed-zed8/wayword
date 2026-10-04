@@ -69,8 +69,17 @@ function sendToPlayers({ sessionId, payloadPlayer, playerConnections }) {
     player.send(payloadPlayer);
   }
 }
-export { sendToPlayers };
+function sendToPlayer({ playerSocket, payloadPlayer }) {
+  if (!playerSocket || playerSocket.readyState !== playerSocket.OPEN) {
+    return false;
+  }
+
+  playerSocket.send(payloadPlayer);
+  return true;
+}
 export { sendToHost };
+export { sendToPlayers };
+export { sendToPlayer };
 
 /**
  * Simple async helper to render EJS files into HTML strings
@@ -124,32 +133,90 @@ export function setupWebSocket(server) {
   //TODO implement game
   //? Player websocket
   wssPlayer.on("connection", async (ws, req) => {
-    let sessionId = await player.connection(ws, req);
+    let sessionId = null;
 
-    ws.on("message", async (message) => {
-      await player.message(ws, message, req);
-    });
+    try {
+      sessionId = await player.connection(ws, req);
 
-    ws.on("close", () => {
-      console.log("Client disconnected");
-      if (sessionId && playerConnections.has(sessionId)) {
-        playerConnections.get(sessionId).delete(ws);
+      if (!sessionId) {
+        if (ws.readyState === ws.OPEN) {
+          ws.close(4004, "Invalid game session");
+        }
+        return;
       }
-    });
+
+      ws.on("message", async (message) => {
+        try {
+          await player.message(ws, message, req);
+        } catch (error) {
+          console.error("Player WebSocket message error:", error);
+
+          if (ws.readyState === ws.OPEN) {
+            ws.close(1011, "Internal Server Error");
+          }
+        }
+      });
+
+      ws.on("close", () => {
+        console.log("Client disconnected");
+
+        if (sessionId && playerConnections.has(sessionId)) {
+          const connections = playerConnections.get(sessionId);
+          connections.delete(ws);
+
+          if (connections.size === 0) {
+            playerConnections.delete(sessionId);
+          }
+        }
+      });
+    } catch (error) {
+      console.error("Player WebSocket connection error:", error);
+
+      if (ws.readyState === ws.OPEN) {
+        ws.close(1011, "Internal Server Error");
+      }
+    }
   });
 
   //? Host websocket
   wssHost.on("connection", async (ws, req) => {
-    let sessionId = await host.connect(ws, req);
+    let sessionId = null;
 
-    ws.on("message", async (message) => {
-      await host.message(ws, message, req);
-    });
+    try {
+      sessionId = await host.connection(ws, req);
 
-    ws.on("close", async () => {
-      console.log("Host disconnected");
-      hostConnections.delete(sessionId);
-    });
+      if (!sessionId) {
+        if (ws.readyState === ws.OPEN) {
+          ws.close(4004, "Invalid game session");
+        }
+        return;
+      }
+
+      ws.on("message", async (message) => {
+        try {
+          await host.message(ws, message, req);
+        } catch (error) {
+          console.error("Host WebSocket message error:", error);
+
+          if (ws.readyState === ws.OPEN) {
+            ws.close(1011, "Internal Server Error");
+          }
+        }
+      });
+
+      ws.on("close", async () => {
+        console.log("Host disconnected");
+        if (hostConnections.get(sessionId) === ws) {
+          hostConnections.delete(sessionId);
+        }
+      });
+    } catch (error) {
+      console.error("Player WebSocket connection error:", error);
+
+      if (ws.readyState === ws.OPEN) {
+        ws.close(1011, "Internal Server Error");
+      }
+    }
   });
 
   //? Intercept the upgrade event

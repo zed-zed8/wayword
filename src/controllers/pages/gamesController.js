@@ -1,5 +1,6 @@
+import mongoose from "mongoose";
 import COWsession from "../../models/games/clash_of_word.js";
-import { playerConnections, defaultSession } from "../../websocket.js";
+import { defaultSession } from "../../websocket.js";
 
 const gamesController = (req, res) => {
   const isHTMXReq = req.get("HX-Request") === "true";
@@ -18,58 +19,67 @@ const lobbyHostController = async (req, res) => {
 
   switch (req.session.pages) {
     case "": {
-      // TODO handle initialization
-      // creating new session in the DB with the default
-      const hostId = req.session.user._id;
-      const newSession = new COWsession(defaultSession(hostId));
-      await newSession.save();
+      try {
+        // TODO handle initialization
+        // creating new session in the DB with the default
+        const hostId = req.session.user._id;
+        const newSession = new COWsession(defaultSession(hostId));
+        await newSession.save();
 
-      //? sessionId = clash_of_word_id
-      let sessionId = newSession._id.toString();
-      console.log(`Created brand new session: ${sessionId}`);
+        //? sessionId = clash_of_word_id
+        let sessionId = newSession._id.toString();
+        console.log(`Created brand new session: ${sessionId}`);
 
-      // update pages
-      req.session.pages = "lobby";
+        // Keep the host's lobby state in the HTTP session.
+        req.session.pages = "lobby";
+        req.session.cowSessionId = sessionId;
+        req.session.playerJoined = [];
+        await req.session.save();
 
-      // render the iniial lobby pages to host
-      res.render("games/clash_of_word/host", {
-        playerJoined: 0,
-        startable: false,
-      });
+        // render the iniial lobby pages to host
+        res.render("games/clash_of_word/host", {
+          playerJoined: 0,
+          startable: false,
+        });
+      } catch (error) {
+        console.error("Failed to create game session:", error);
+        res.status(500).send("Failed to create game session.");
+      }
       break;
     }
     case "lobby": {
       // TODO handle lobby on refresh
-      // filter uniquely
-      let seenIds = new Set();
-      for (let i = 0; i < req.session.playerJoined.length; i++) {
-        const currentId = req.session.playerJoined[i].playerId;
+      const playerJoined = Array.isArray(req.session.playerJoined)
+        ? req.session.playerJoined
+        : [];
 
-        if (seenIds.has(currentId)) {
-          req.session.playerJoined.splice(i, 1); // Mutates original array by removing duplicate
-          i--; // Step back so the next item isn't skipped
-        } else {
+      // filter uniquely
+      const uniquePlayers = [];
+      const seenIds = new Set();
+
+      for (const player of playerJoined) {
+        const currentId = String(player.playerId);
+
+        if (!seenIds.has(currentId)) {
           seenIds.add(currentId);
+          uniquePlayers.push(player);
         }
       }
 
-      // amount of player joined
-      let playerJoined = {};
+      req.session.playerJoined = uniquePlayers;
+      await req.session.save();
+
       console.log("playerJoined : " + req.session.playerJoined);
-      if (req.session.playerJoined) {
-        playerJoined = req.session.playerJoined;
-      }
+      console.log("uniquePlayers : " + uniquePlayers);
 
       // is startable
-      console.log("playerConnections");
-      console.log(playerConnections);
-      let startable = false;
-      if (playerJoined.length == 2) {
-        startable = true;
-      }
+      const startable = uniquePlayers.length === 2;
 
       // render the lobby state to host
-      res.render("games/clash_of_word/host", { playerJoined, startable });
+      res.render("games/clash_of_word/host", {
+        playerJoined: uniquePlayers,
+        startable,
+      });
       break;
     }
     case "gameRunning": {
@@ -100,11 +110,18 @@ const lobbyController = async (req, res) => {
 
   // Check for a specific parameter
   // sessionId = lobbyCode = clash_of_word_id
-  let currentSessionId;
-  if (req.query.lobbyCode) {
-    currentSessionId = req.query.lobbyCode;
-  } else {
-    currentSessionId = req.query.sessionId;
+  const currentSessionId = req.query.lobbyCode || req.query.sessionId;
+
+  if (!currentSessionId) {
+    return res.status(400).send("A lobby code is required.");
+  }
+  if (!mongoose.isValidObjectId(currentSessionId)) {
+    return res.status(400).send("Invalid lobby code.");
+  }
+
+  const userId = req.session.user?._id;
+  if (!userId || !mongoose.isValidObjectId(userId)) {
+    return res.status(401).send("Unauthorized.");
   }
   console.log("currentSessionId : " + currentSessionId);
 
@@ -121,34 +138,65 @@ const lobbyController = async (req, res) => {
             .send("Game session not found. Check the code on the screen.");
         }
 
-        // determine slot based directly on database state instead of an in-memory counter
+        if (session.gamestatus !== "running") {
+          return res
+            .status(400)
+            .send("This game session is no longer running.");
+        }
+
+        const userIdString = userId.toString();
+
+        // Rejoin the same slot if this user already belongs to the session.
         let playerSlot;
-        console.log("player1_id : " + session.player1.playerId);
-        console.log("player2_id : " + session.player2.playerId);
-        console.log("user_id : " + req.session.user._id);
         if (
-          !session.player1.playerId ||
-          session.player1.playerId.toString() ===
-            req.session.user._id.toString()
+          session.player1.playerId &&
+          session.player1.playerId.toString() === userIdString
         ) {
           playerSlot = "player1";
         } else if (
-          !session.player2.playerId ||
-          session.player2.playerId.toString() ===
-            req.session.user._id.toString()
+          session.player2.playerId &&
+          session.player2.playerId.toString() === userIdString
         ) {
-          playerSlot = "player2";
+          playerSlot = "player1";
         } else {
-          return res
-            .status(400)
-            .send("Room is full! Cannot have more than 2 players.");
+          // Claim the first available slot.
+          // The update condition prevents two simultaneous join requests from claiming the same slot
+          let updatedSession = await COWsession.findOneAndUpdate(
+            {
+              _id: currentSessionId,
+              gamestatus: "running",
+              "player1.playerId": null,
+            },
+            { $set: { "player1.playerId": userId } },
+            { new: true },
+          );
+
+          if (updatedSession) {
+            playerSlot = "player1";
+          } else {
+            updatedSession = await COWsession.findOneAndUpdate(
+              {
+                _id: currentSessionId,
+                gamestatus: "running",
+                "player2.playerId": null,
+              },
+              { $set: { "player2.playerId": userId } },
+              { new: true },
+            );
+
+            if (updatedSession) {
+              playerSlot = "player2";
+            } else {
+              return res
+                .status(400)
+                .send("Room is full! Cannot have more than 2 players.");
+            }
+          }
         }
 
-        // assign this player id to the player slot
-        const targetPlayer = session[playerSlot];
-        targetPlayer.playerId = req.session.user._id;
-        session.markModified(playerSlot);
-        await session.save(); // save the changes
+        console.log("player1_id : " + session.player1.playerId);
+        console.log("player2_id : " + session.player2.playerId);
+        console.log("user_id : " + req.session.user._id);
 
         // Tell HTMX to update the browser URL bar with these extra query params
         res.setHeader(
@@ -156,14 +204,16 @@ const lobbyController = async (req, res) => {
           `/lobby?sessionId=${currentSessionId}&playerSlot=${playerSlot}`,
         );
 
+        // update pages to lobby before rendering so the WebSocket sees it
+        req.session.pages = "lobby";
+        req.session.cowSessionId = currentSessionId;
+        await req.session.save();
+
         // render the init state to player
         res.render("games/clash_of_word/player", {
           sessionId: currentSessionId,
           playerSlot: playerSlot,
         });
-
-        // update pages to lobby
-        req.session.pages = "lobby";
       } catch (error) {
         console.log(error);
         res.status(500).send("Error joining the session. " + error.message);

@@ -1,6 +1,7 @@
-<!-- TODO make host initial game screen -->
-<h1>Gaming Host</h1>
+<!-- host end screen -->
+<h1>Host Gaming End</h1>
 <h3>Game Last <%= roundCount %> Round</h3>
+<h3><a href="/back" hx-target="#body" hx-swap="innerMorph">Go Home</a></h3>
 
 <div class="flex flex-col">
   <div><%= winningPlayer %></div>
@@ -9,27 +10,27 @@
 <div class="flex flex-col">
   <div>player1</div>
   <div>
-    username: <%= player1.username %>
+    username: <%= player1.playerId?.username ?? "Guest" %>
   </div>
 
   <div>player2</div>
   <div>
-    username: <%= player2.username %>
+    username: <%= player2.playerId?.username ?? "Guest" %>
   </div>
 </div>
 
-<div class="flex flex-col">
-  <% rounds.forEach(R => { %>
-  <div class="flex">
-    <div>Round Number: <%= R.round %></div>
-    <div>Player 1 Health: <%= R.player1health %></div>
-    <div>Player 2 Health: <%= R.player2health %></div>
-    <div>Word 1: <%= R.word1 %></div>
-    <div>Word 2: <%= R.word2 %></div>
-    <div>Score 1: <%= R.score1 %></div>
-    <div>Score 2: <%= R.score2 %></div>
-    <div>Result: <%= R.result %></div>
-    <div>availableLetter: <%= R.availableLetter %></div>
+<div class="flex flex-col gap-2 overflow-auto">
+  <% rounds.forEach(round => { %>
+  <div class="flex gap-2">
+    <div>Round Number: <%= round.round %></div>
+    <div>Player 1 Health: <%= round.player1health %></div>
+    <div>Player 2 Health: <%= round.player2health %></div>
+    <div>Word 1: <%= round.word1 %></div>
+    <div>Word 2: <%= round.word2 %></div>
+    <div>Score 1: <%= round.score1 %></div>
+    <div>Score 2: <%= round.score2 %></div>
+    <div>Result: <%= round.result %></div>
+    <div>availableLetter: <%= round.availableLetter.join(", ") %></div>
   </div>
   <% }) %>
 </div>
