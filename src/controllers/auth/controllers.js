@@ -33,7 +33,13 @@ const postLoginController = async (req, res) => {
   const user = await User.exists({ username: username, password: password });
 
   if (user === null) {
-    res.render("index", { page: "auth/login" });
+    res.set({
+      "HX-Reswap": "innerHTML",
+      "HX-Retarget": "#message",
+    });
+    res.status(400).render("pages/auth/partials/wrong", {
+      message: "username or password is wrong",
+    });
   } else {
     console.log(user);
     req.session.user = { _id: user._id.toString(), username: username };
@@ -46,20 +52,49 @@ const postRegisterController = async (req, res) => {
   if (!req.body) {
     return res.status(400).send("Server received an undefined body payload.");
   }
+  try {
+    const username = req.body.username;
+    const email = req.body.email;
+    const password = req.body.password;
 
-  const username = req.body.username;
-  const email = req.body.email;
-  const password = req.body.password;
+    const user = new User({
+      username: username,
+      email: email,
+      password: password,
+    });
 
-  const user = new User({
-    username: username,
-    email: email,
-    password: password,
-  });
-  await user.save();
+    if (password.length < 8) {
+      res.set({
+        "HX-Reswap": "innerHTML",
+        "HX-Retarget": "#message",
+      });
+      res.render("pages/auth/partials/wrong", {
+        message: "password must be atleast 8 characters long",
+      });
+      return;
+    }
 
-  req.session.user = { _id: user._id.toString(), username: username };
-  res.redirect("/");
+    await user.save();
+
+    req.session.user = { _id: user._id.toString(), username: username };
+    res.redirect("/");
+  } catch (error) {
+    if (error.code === 11000) {
+      console.error("username or email error");
+
+      res.set({
+        "HX-Reswap": "innerHTML",
+        "HX-Retarget": "#message",
+      });
+      res.status(400).render("pages/auth/partials/wrong", {
+        message: "username or email already exist",
+      });
+      return;
+    }
+    console.error("unexpected error");
+    console.error(error);
+    res.status(400);
+  }
 };
 
 const logoutController = async (req, res) => {

@@ -1,3 +1,4 @@
 node_modules/
 .env
 eslint.config.js
+public/css/output.css
