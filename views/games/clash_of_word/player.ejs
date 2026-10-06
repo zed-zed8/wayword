@@ -1,6 +1,6 @@
 <%- include("../../partials/htmlhead.ejs") %>
 
-<main id="lobby-player" hx-ext="ws" hx-ws:connect="/player?sessionId=<%= sessionId %>&playerSlot=<%= playerSlot %>">
+<main id="lobby-player" hx-ext="ws" hx-ws:connect="/player?sessionId=<%= sessionId %>&playerSlot=<%= playerSlot %>" hx-boost:inherited="false">
   <h1>Clash Of Word</h1>
 
   <section id="game-screen">

@@ -11,48 +11,68 @@ import {
 } from "../websocket.js";
 
 function generateLetter({ amount = 10 } = {}) {
-  let letters = [
-    "a",
-    "b",
+  let commonConsonant = [
     "c",
     "d",
-    "e",
     "f",
     "g",
     "h",
-    "i",
-    "j",
-    "k",
     "l",
     "m",
     "n",
-    "o",
-    "p",
-    "q",
     "r",
     "s",
     "t",
-    "u",
-    "v",
-    "w",
-    "x",
     "y",
-    "z",
+    "w",
   ];
+  let rareConsonant = ["b", "j", "k", "p", "q", "v", "x", "z"];
+  let vowel = ["a", "i", "u", "e", "o"];
 
-  if (!Number.isInteger(amount) || amount < 0 || amount > letters.length) {
-    throw new RangeError(
-      `Letter amount must be between 0 and ${letters.length}.`,
-    );
+  if (!Number.isInteger(amount) || amount < 0 || amount > 26) {
+    throw new RangeError(`Letter amount must be between 0 and 26.`);
   }
 
   const selectedLetters = [];
-  const availableLetter = [...letters];
+  const availableCommon = [...commonConsonant];
+  const availableRare = [...rareConsonant];
+  const availableVowel = [...vowel];
 
-  for (let index = 0; index < amount; index++) {
-    let randomIndex = Math.floor(Math.random() * availableLetter.length);
-    selectedLetters.push(availableLetter[randomIndex]);
-    availableLetter.splice(randomIndex, 1);
+  let index = 0;
+  while (index < amount) {
+    if (index == 0) {
+      let randomIndex = Math.floor(Math.random() * availableVowel.length);
+      selectedLetters.push(availableVowel[randomIndex]);
+      availableVowel.splice(randomIndex, 1);
+      index++;
+      continue;
+    }
+
+    const randomRarity = Math.floor(Math.random() * 100) + 1; // 1 - 100
+    let targetPool;
+
+    // Determine preferred pool based on weights
+    if (randomRarity <= 10) {
+      targetPool = availableRare;
+    } else if (randomRarity <= 50) {
+      targetPool = availableVowel;
+    } else {
+      targetPool = availableCommon;
+    }
+
+    // Fallback Mechanism: If preferred pool is empty, pick any pool with items left
+    if (targetPool.length < 1) {
+      if (availableCommon.length > 0) targetPool = availableCommon;
+      else if (availableVowel.length > 0) targetPool = availableVowel;
+      else if (availableRare.length > 0) targetPool = availableRare;
+    }
+
+    // Safely pull the letter without hitting an infinite loop
+    let randomIndex = Math.floor(Math.random() * targetPool.length);
+    selectedLetters.push(targetPool[randomIndex]);
+    targetPool.splice(randomIndex, 1);
+
+    index++;
   }
   return selectedLetters;
 }
@@ -531,14 +551,16 @@ const host = {
 
       let winningPlayer;
       if (session.player1.health <= 0) {
+        session.player1.health = 0;
         winningPlayer = "Player 2 Win";
       } else if (session.player2.health <= 0) {
+        session.player2.health = 0;
         winningPlayer = "Player 1 Win";
       }
 
       const roundCount = session.rounds.length + 1;
 
-      // Mark this exact session as finished. Do not delete every running game.
+      // Mark this exact session as finished
       session.gamestatus = "finished";
       await session.save();
 

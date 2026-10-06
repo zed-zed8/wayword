@@ -1,3 +1,5 @@
+import en from "dictionary-en";
+import nspell from "nspell";
 import mongoose from "mongoose";
 
 //? models
@@ -119,7 +121,6 @@ const player = {
       return null;
     }
   },
-  // TODO finish this
   async message(ws, message, req) {
     let data;
 
@@ -171,14 +172,69 @@ const player = {
         return;
       }
 
-      if (
-        typeof data.submittedWord !== "string" ||
-        data.submittedWord.trim().length === 0
-      ) {
+      if (typeof data.submittedWord !== "string") {
         return;
       }
 
       // TODO later verify word
+      const wordLetters = data.submittedWord.trim().split("");
+
+      // length check
+      if (data.submittedWord.trim().length < 2) {
+        console.log("word must be more than 1 letter long");
+        const payloadPlayer = await renderTemplate(
+          "clash_of_word",
+          "wrong",
+          {
+            message: "word must be more than 1 letter long",
+          },
+          `#message`,
+          "innerMorph",
+        );
+        sendToPlayer({ playerSocket: ws, payloadPlayer });
+        return;
+      }
+
+      // available letter check
+      const availableLetter = [
+        ...session.currentAvailableLetter.map((value) => value.toLowerCase()),
+      ];
+      if (
+        !wordLetters.every((letter) =>
+          availableLetter.includes(letter.toLowerCase()),
+        )
+      ) {
+        console.log("You used forbidden letter");
+        const payloadPlayer = await renderTemplate(
+          "clash_of_word",
+          "wrong",
+          {
+            message: "You used forbidden letter",
+          },
+          `#message`,
+          "innerMorph",
+        );
+        sendToPlayer({ playerSocket: ws, payloadPlayer });
+        return;
+      }
+
+      // word check
+      const spell = nspell(en);
+      if (!spell.correct(data.submittedWord.trim())) {
+        console.log("words doesnt exist");
+        const payloadPlayer = await renderTemplate(
+          "clash_of_word",
+          "wrong",
+          {
+            message: "words doesnt exist",
+          },
+          `#message`,
+          "innerMorph",
+        );
+        sendToPlayer({ playerSocket: ws, payloadPlayer });
+        return;
+      }
+
       activePlayer.word = data.submittedWord.trim();
       activePlayer.status = "waiting";
 
@@ -275,7 +331,6 @@ const player = {
       sendToHost({ sessionId, payloadHost, hostConnections });
       // Update Both Players
       sendToPlayers({ sessionId, payloadPlayer, playerConnections });
-      sendToPlayer({ playerSocket: ws, payloadPlayer });
     }
   },
 };

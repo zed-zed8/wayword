@@ -1,6 +1,6 @@
 <%- include("../../partials/htmlhead.ejs") %>
 
-<main id="lobby-host" hx-ext="ws" hx-ws:connect="/host">
+<main id="lobby-host" hx-ext="ws" hx-ws:connect="/host" hx-boost:inherited="false">
   <h1>Clash Of Word</h1>
 
   <section id="game-screen">
