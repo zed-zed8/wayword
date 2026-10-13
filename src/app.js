@@ -33,6 +33,11 @@ const MongoDBStore = connect_mongodb_session(session);
 const store = new MongoDBStore({
   uri: process.env.MONGODB_URI,
   collection: "sessions",
+  // Pass connection options here to force IPv4 and increase timeouts
+  connectionOptions: {
+    family: 4,
+    serverSelectionTimeoutMS: 10000, // Gives mobile networks 10 seconds to respond
+  },
 });
 
 // Catch errors if the store fails to connect to Atlas
@@ -90,7 +95,9 @@ const dbURI = process.env.MONGODB_URI;
 // "mongodb+srv://<username>:<password>@<cluster>.lqc8ksz.mongodb.net/<database>?retryWrites=true&w=majority&appName=<cluster>";
 
 mongoose
-  .connect(dbURI)
+  .connect(dbURI, {
+    family: 4,
+  })
   .then(() => {
     console.log("connected to db : ");
     // console.log(result);
@@ -114,4 +121,4 @@ mongoose
       console.info(`App listening on port ${hostIp}:${port}`),
     );
   })
-  .catch((err) => console.log("error: " + err));
+  .catch((err) => console.log("Mongoose Connection error: ", err));

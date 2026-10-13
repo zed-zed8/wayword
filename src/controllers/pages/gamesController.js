@@ -168,7 +168,7 @@ const lobbyController = async (req, res) => {
               "player1.playerId": null,
             },
             { $set: { "player1.playerId": userId } },
-            { new: true },
+            { returnDocument: "after" },
           );
 
           if (updatedSession) {
@@ -181,7 +181,7 @@ const lobbyController = async (req, res) => {
                 "player2.playerId": null,
               },
               { $set: { "player2.playerId": userId } },
-              { new: true },
+              { returnDocument: "after" },
             );
 
             if (updatedSession) {
